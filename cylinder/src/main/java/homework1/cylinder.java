@@ -23,106 +23,70 @@ public class cylinder extends Shape
 		// construct the position of cylinder VertexDate
 		// cylinder contains noOfSide rectangular faces + 2
 		// and noOfSide*2 points
-		float[] v = new float[(noOfSide+1)*2*3];
-		int i;
-		// center points of top and bottom
-		v[0] = 0;
-		v[1] = 0;
-		v[2] = height;
-
-		v[(noOfSide+1)*3] = 0;
-		v[(noOfSide+1)*3+1] = 0;
-		v[(noOfSide+1)*3+2] = 0;
-		// side points
-		for (i=1; i<noOfSide+1; i++)
+		float[] v = new float[noOfSide*6*3];
+		for (int i=0; i<noOfSide; i++)
 		{
-			v[i*3]   = radius * (float)Math.sin(theta*i); // x
-			v[i*3+1] = radius * (float)Math.cos(theta*i); // y
-			v[i*3+2] = height; // z
-
-			v[(noOfSide+2)*3]   = radius * (float)Math.sin(theta*i); // x
-			v[(noOfSide+2)*3+1] = radius * (float)Math.cos(theta*i); // y
-			v[(noOfSide+2)*3+2] = 0; // z
+			// upper center point
+			v[i*6*3] = 0;
+			v[i*6*3+1] = 0;
+			v[i*6*3+2] = height;
+			// side points
+			v[i*6*3+3] = radius * (float)Math.sin(theta*i); // x
+			v[i*6*3+4] = radius * (float)Math.cos(theta*i); // y
+			v[i*6*3+5] = height; // z
+			v[i*6*3+6] = radius * (float)Math.sin(theta*(i+1)); // x
+			v[i*6*3+7] = radius * (float)Math.cos(theta*(i+1)); // y
+			v[i*6*3+8] = height; // z
+			// lower center point
+			v[i*6*3+9] = 0;
+			v[i*6*3+10] = 0;
+			v[i*6*3+11] = 0;
+			// side points
+			v[i*6*3+12] = radius * (float)Math.sin(theta*i); // x
+			v[i*6*3+13] = radius * (float)Math.cos(theta*i); // y
+			v[i*6*3+14] = -height; // z
+			v[i*6*3+15] = radius * (float)Math.sin(theta*(i+1)); // x
+			v[i*6*3+16] = radius * (float)Math.cos(theta*(i+1)); // y
+			v[i*6*3+17] = -height; // z
 		}
 
-		float[] c = new float[(noOfSide+1)*2*3];
-        int a = -1;
-        for (i = 0; i < noOfSide+1; i++) {
-            c[++a] = 1;
-            c[++a] = 1;
-            c[++a] = 1;
-
-            c[++a] = 0;
-            c[++a] = 0;
-            c[++a] = 0;
+		float[] c = new float[v.length];
+        for (int i=0; i<noOfSide; i=i+2) {
+        	for (int j=0; j<6; j++)
+        	{
+        		c[i*18+j*3] = 1;
+        		c[i*18+j*3+1] = 0;
+        		c[i*18+j*3+2] = 0;
+        	}
+        }
+        for (int i=1; i<noOfSide; i=i+2) {
+        	for (int j=0; j<6; j++)
+        	{
+        		c[i*18+j*3] = 0;
+        		c[i*18+j*3+1] = 0;
+        		c[i*18+j*3+2] = 1;
+        	}
         }
 
-		int s = noOfSide;
-		int indices[] = new int[4*s*3];	// 4 triangles per segment
-		int indicesTop[] = new int[noOfSide*3];
-		int indicesBottom[] = new int[noOfSide*3];
-		int indicesSide[] = new int[2*noOfSide*3];
-		for(i=0; i<noOfSide-1; i++)
+		int indices[] = new int[4*noOfSide*3];
+		for(int i=0; i<noOfSide; i++)
 		{
-			indices[i*3] = 0;
-			indices[i*3+1] = i+1;
-			indices[i*3+2] = i+2;
+			indices[i*4*3] = i*6;
+			indices[i*4*3+1] = i*6+1;
+			indices[i*4*3+2] = i*6+2;
+
+			indices[i*4*3+3] = i*6+3;
+			indices[i*4*3+4] = i*6+4;
+			indices[i*4*3+5] = i*6+5;
 			
-			indices[(noOfSide+i)*3] = noOfSide+1;
-			indices[(noOfSide+i)*3+1] = noOfSide+i+2;
-			indices[(noOfSide+i)*3+2] = noOfSide+i+3;
+			indices[i*4*3+6] = i*6+1;
+			indices[i*4*3+7] = i*6+2;
+			indices[i*4*3+8] = i*6+5;
+			
+			indices[i*4*3+9] = i*6+1;
+			indices[i*4*3+10] = i*6+5;
+			indices[i*4*3+11] = i*6+4;
 		}
-		indices[(noOfSide-1)*3] = 0;
-		indices[(noOfSide-1)*3+1] = noOfSide;
-		indices[(noOfSide-1)*3+2] = 1;
-
-		indices[(2*noOfSide-1)*3] = noOfSide+1;
-		indices[(2*noOfSide-1)*3+1] = 2*noOfSide+1;
-		indices[(2*noOfSide-1)*3+2] = noOfSide+2;
-
-		for(i=0; i<noOfSide-1; i++)
-		{
-			indicesTop[i*3] = 0;
-			indicesTop[i*3+1] = i+1;
-			indicesTop[i*3+2] = i+2;
-
-			indicesBottom[i*3] = noOfSide+1;
-			indicesBottom[i*3+1] = i+1+noOfSide+1;
-			indicesBottom[i*3+2] = i+1+noOfSide+2;
-		}
-		indicesTop[(noOfSide-1)*3] = 0;
-		indicesTop[(noOfSide-1)*3+1] = noOfSide;
-		indicesTop[(noOfSide-1)*3+2] = 1;
-
-		indicesBottom[(noOfSide-1)*3] = noOfSide+1;
-		indicesBottom[(noOfSide-1)*3+1] = 2*noOfSide+2;
-		indicesBottom[(noOfSide-1)*3+2] = noOfSide+2;
-		// side
-		for(i=1; i<noOfSide-1; i++)
-		{
-			indicesSide[(i-1)*6] = i;
-			indicesSide[(i-1)*6+1] = i+1;
-			indicesSide[(i-1)*6+2] = i+noOfSide+1;
-			
-			indicesSide[(i-1)*6+3] = i;
-			indicesSide[(i-1)*6+4] = i+noOfSide+1;
-			indicesSide[(i-1)*6+5] = i+noOfSide+1+1;
-			
-			indices[2*noOfSide+(i-1)*6] = i;
-			indices[2*noOfSide+(i-1)*6+1] = i+1;
-			indices[2*noOfSide+(i-1)*6+2] = i+noOfSide+1;
-			
-			indices[2*noOfSide+(i-1)*6+3] = i;
-			indices[2*noOfSide+(i-1)*6+4] = i+noOfSide+1;
-			indices[2*noOfSide+(i-1)*6+5] = i+noOfSide+1+1;
-		}
-		indicesSide[(2*noOfSide-2)] = 1;
-		indicesSide[(2*noOfSide-2)+1] = noOfSide+2;
-		indicesSide[(2*noOfSide-2)+2] = 2*noOfSide+1;
-
-		indicesSide[(2*noOfSide-1)] = 1;
-		indicesSide[(2*noOfSide-1)+1] = noOfSide;
-		indicesSide[(2*noOfSide-1)+2] = 2*noOfSide+1;
 
 		VertexData vertexData = renderContext.makeVertexData(v.length/3);
 		vertexData.addElement(c, VertexData.Semantic.COLOR, 3);
