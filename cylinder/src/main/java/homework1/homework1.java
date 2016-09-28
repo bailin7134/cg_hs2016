@@ -42,7 +42,7 @@ public class homework1
 			renderContext = r;
 			
 			// Make a simple geometric object: a
-			cylinder_shape = new cylinder(renderContext, 6, 1, 4);
+			cylinder_shape = new torus(renderContext, 4, 2, 4, 4);
 								
 			// Make a scene manager and add the object
 			sceneManager = new SimpleSceneManager();
