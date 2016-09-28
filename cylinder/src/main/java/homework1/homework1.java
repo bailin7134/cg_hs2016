@@ -22,7 +22,7 @@ public class homework1
 	static Shader diffuseShader;
 	static Material material;
 	static SimpleSceneManager sceneManager;
-	static Shape cylinder_shape;
+	static Shape shape;
 	static float currentstep, basicstep;
 
 	/**
@@ -42,11 +42,12 @@ public class homework1
 			renderContext = r;
 			
 			// Make a simple geometric object: a
-			cylinder_shape = new torus(renderContext, 4, 2, 4, 4);
+			shape = new cylinder(renderContext, 6, 1, 3);
+			//shape = new torus(renderContext, 2, 1, 100, 100);
 								
 			// Make a scene manager and add the object
 			sceneManager = new SimpleSceneManager();
-			sceneManager.addShape(cylinder_shape);
+			sceneManager.addShape(shape);
 
 			// Add the scene to the renderer
 			renderContext.setSceneManager(sceneManager);
@@ -96,14 +97,14 @@ public class homework1
 		public void run()
 		{
 			// Update transformation by rotating with angle "currentstep"
-			Matrix4f t = cylinder_shape.getTransformation();
+			Matrix4f t = shape.getTransformation();
     		Matrix4f rotX = new Matrix4f();
     		rotX.rotX(currentstep);
     		Matrix4f rotY = new Matrix4f();
     		rotY.rotY(currentstep);
     		t.mul(rotX);
     		t.mul(rotY);
-    		cylinder_shape.setTransformation(t);
+    		shape.setTransformation(t);
     		
     		// Trigger redrawing of the render window
     		renderPanel.getCanvas().repaint(); 
@@ -162,23 +163,23 @@ public class homework1
 				}
 				case 'n': {
 					// Remove material from shape, and set "normal" shader
-					cylinder_shape.setMaterial(null);
+					shape.setMaterial(null);
 					renderContext.useShader(normalShader);
 					break;
 				}
 				case 'd': {
 					// Remove material from shape, and set "default" shader
-					cylinder_shape.setMaterial(null);
+					shape.setMaterial(null);
 					renderContext.useDefaultShader();
 					break;
 				}
 				case 'm': {
 					// Set a material for more complex shading of the shape
-					if(cylinder_shape.getMaterial() == null) {
-						cylinder_shape.setMaterial(material);
+					if(shape.getMaterial() == null) {
+						shape.setMaterial(material);
 					} else
 					{
-						cylinder_shape.setMaterial(null);
+						shape.setMaterial(null);
 						renderContext.useDefaultShader();
 					}
 					break;

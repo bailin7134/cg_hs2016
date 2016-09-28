@@ -22,15 +22,13 @@ public class torus extends Shape
 		for(int i=0; i<outerResolution; i++)
 			for(int j=0; j<innerResolution; j++)
 				{
-					v[(i*outerResolution+j)*3]   = (outerRadius+innerRadius*(float)Math.cos(j*p))*(float)Math.cos(t*outerResolution);
-					v[(i*outerResolution+j)*3+1] = (outerRadius+innerRadius*(float)Math.cos(j*p))*(float)Math.sin(t*outerResolution);
+					v[(i*outerResolution+j)*3]   = (outerRadius+innerRadius*(float)Math.cos(j*p))*(float)Math.cos(i*t);
+					v[(i*outerResolution+j)*3+1] = (outerRadius+innerRadius*(float)Math.cos(j*p))*(float)Math.sin(i*t);
 					v[(i*outerResolution+j)*3+2] = innerRadius*(float)Math.sin(j*p);
-
-					c[(i*outerResolution+j)*3]   = 1;
-					c[(i*outerResolution+j)*3+1] = 0;
-					c[(i*outerResolution+j)*3+2] = 0;
 				}
 		
+		for(int i=0; i<c.length; i++)
+			c[i] = 1;
 		
 		// small circle first
 		// t is fixed, p varies from 0 to 2*pi
@@ -65,21 +63,28 @@ public class torus extends Shape
 			indices[(i*outerResolution+innerResolution-1)*6+4]=(i+1)*innerResolution+innerResolution-1;
 			indices[(i*outerResolution+innerResolution-1)*6+5]=(i+1)*innerResolution+innerResolution;
 		}
+
 		// corner of outer circle
 		// 0...innerResolution-1
 		// (outerResolution-1)*innerResolution...outerResolution*innerResolution-1
 		for(int j=0; j<innerResolution-1; j++)
 		{
 			indices[((outerResolution-1)*innerResolution+j)*6]=j;
-			indices[((outerResolution-1)*innerResolution+j)*6+1]=(outerResolution-1)*innerResolution+j+1;
+			indices[((outerResolution-1)*innerResolution+j)*6+1]=(outerResolution-1)*innerResolution+j;
 			indices[((outerResolution-1)*innerResolution+j)*6+2]=(outerResolution-1)*innerResolution+j+1;
 
 			indices[((outerResolution-1)*innerResolution+j)*6+3]=j;
-			indices[((outerResolution-1)*innerResolution+j)*6+4]=(outerResolution-1)*innerResolution+j;
+			indices[((outerResolution-1)*innerResolution+j)*6+4]=j+1;
 			indices[((outerResolution-1)*innerResolution+j)*6+5]=(outerResolution-1)*innerResolution+j+1;
 		}
 		// the corner of inner circle
-		
+		indices[(outerResolution*innerResolution-1)*6]= 0;
+		indices[(outerResolution*innerResolution-1)*6+1]= innerResolution-1;
+		indices[(outerResolution*innerResolution-1)*6+2]= outerResolution*innerResolution-1;
+		indices[(outerResolution*innerResolution-1)*6+3]= 0;
+		indices[(outerResolution*innerResolution-1)*6+4]= (outerResolution-1)*innerResolution;
+		indices[(outerResolution*innerResolution-1)*6+5]= outerResolution*innerResolution-1;
+
 		vertexData.addIndices(indices);
 
 		return vertexData;
