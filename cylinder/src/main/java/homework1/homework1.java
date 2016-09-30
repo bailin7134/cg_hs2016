@@ -24,6 +24,9 @@ public class homework1
 	static SimpleSceneManager sceneManager;
 	static Shape shape;
 	static float currentstep, basicstep;
+	static animation animate;
+	
+	static String DEBUG = "animation";  //cylinder, torus, cube, animation
 
 	/**
 	 * An extension of {@link GLRenderPanel} or {@link SWRenderPanel} to 
@@ -41,14 +44,31 @@ public class homework1
 		{
 			renderContext = r;
 			
-			// Make a simple geometric object: a
-			shape = new cylinder(renderContext, 6, 1, 3);
-			//shape = new torus(renderContext, 2, 1, 100, 100);
-								
 			// Make a scene manager and add the object
 			sceneManager = new SimpleSceneManager();
-			sceneManager.addShape(shape);
 
+			if(DEBUG=="cylinder")
+			{
+			shape = new cylinder(renderContext, 50, 1, 3);
+			sceneManager.addShape(shape);
+			}
+			if(DEBUG=="torus")
+			{
+			shape = new torus(renderContext, 2, 1, 50, 50);
+			sceneManager.addShape(shape);
+			}
+			if(DEBUG=="cube")
+			{
+			shape = new cube(renderContext);
+			sceneManager.addShape(shape);
+			}
+			
+			if(DEBUG=="animation")
+			{
+			animate = new animation(sceneManager, renderContext);
+			animate.setTransformation(new Matrix4f(0,-1,0,1, 1,0,0,0, 0,0,1,0, 0,0,0,1));
+			}
+			
 			// Add the scene to the renderer
 			renderContext.setSceneManager(sceneManager);
 			
@@ -88,6 +108,8 @@ public class homework1
 		}
 	}
 
+	static float anglestep = (float)(2*Math.PI/360);
+	static float angle = 0;
 	/**
 	 * A timer task that generates an animation. This task triggers
 	 * the redrawing of the 3D scene every time it is executed.
@@ -97,16 +119,31 @@ public class homework1
 		public void run()
 		{
 			// Update transformation by rotating with angle "currentstep"
+			if(DEBUG=="cylinder" || DEBUG=="torus" || DEBUG=="cube")
+			{
 			Matrix4f t = shape.getTransformation();
     		Matrix4f rotX = new Matrix4f();
-    		rotX.rotX(currentstep);
     		Matrix4f rotY = new Matrix4f();
+    		rotX.rotX(currentstep);
     		rotY.rotY(currentstep);
     		t.mul(rotX);
     		t.mul(rotY);
     		shape.setTransformation(t);
-    		
-    		// Trigger redrawing of the render window
+			}
+
+			if(DEBUG=="animation")
+			{
+			Matrix4f t = animate.getTransformation();
+			angle += anglestep;
+			t.setIdentity();
+			t.setTranslation(new Vector3f(2*(float)(Math.cos(angle)), 2*(float)(Math.sin(angle)), 0));
+			
+    		Matrix4f rotZ = new Matrix4f();
+    		rotZ.rotZ(angle);
+    		t.mul(rotZ);
+    		animate.angle_calc(angle);
+    		animate.setTransformation(t);
+			}
     		renderPanel.getCanvas().repaint(); 
 		}
 	}

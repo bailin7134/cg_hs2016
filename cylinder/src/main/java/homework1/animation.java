@@ -12,12 +12,6 @@ import java.util.TimerTask;
 
 public class animation
 {	
-	static RenderPanel renderPanel;
-	static RenderContext renderContext;
-	static Shader normalShader;
-	static Shader diffuseShader;
-	static Material material;
-	static SimpleSceneManager sceneManager;
 	static Shape shape_cycle1, shape_cycle2, shape_cycle3, shape_body1, shape_body2;
 	static float currentstep, basicstep;
 	
