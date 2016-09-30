@@ -22,9 +22,7 @@ public class Animation
 {	
 	static Shape shape_cycle1, shape_cycle2, shape_cycle3, shape_body1, shape_body2;
 	static float currentstep, basicstep;
-	
-	Matrix4f transformation;
-
+	Matrix4f transf;
 	static float anglestep = (float)(2*Math.PI/360);
 	static float angle = 0;
 	
@@ -47,7 +45,7 @@ public class Animation
 
 	public void setTransformation(Matrix4f t)
 	{
-		transformation = t;
+		transf = t;
 		
 		Matrix4f t_body1 = new Matrix4f(t);
 		Matrix4f trans_body1 = new Matrix4f();
@@ -87,7 +85,7 @@ public class Animation
 	
 	public Matrix4f getTransformation()
 	{
-		return transformation;
+		return transf;
 	}
 	
 	public void angle_calc(float currentAngle)
