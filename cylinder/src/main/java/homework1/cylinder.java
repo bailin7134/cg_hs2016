@@ -44,10 +44,10 @@ public class cylinder extends Shape
 			// side points
 			v[i*6*3+12] = radius * (float)Math.sin(theta*i); // x
 			v[i*6*3+13] = radius * (float)Math.cos(theta*i); // y
-			v[i*6*3+14] = -height; // z
+			v[i*6*3+14] = 0; // z
 			v[i*6*3+15] = radius * (float)Math.sin(theta*(i+1)); // x
 			v[i*6*3+16] = radius * (float)Math.cos(theta*(i+1)); // y
-			v[i*6*3+17] = -height; // z
+			v[i*6*3+17] = 0; // z
 		}
 
 		float[] c = new float[v.length];
@@ -84,8 +84,8 @@ public class cylinder extends Shape
 			indices[i*4*3+8] = i*6+5;
 			
 			indices[i*4*3+9] = i*6+1;
-			indices[i*4*3+10] = i*6+5;
-			indices[i*4*3+11] = i*6+4;
+			indices[i*4*3+10] = i*6+4;
+			indices[i*4*3+11] = i*6+5;
 		}
 
 		VertexData vertexData = renderContext.makeVertexData(v.length/3);

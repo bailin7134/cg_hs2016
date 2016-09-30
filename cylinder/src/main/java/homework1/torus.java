@@ -27,9 +27,15 @@ public class torus extends Shape
 					v[(i*outerResolution+j)*3+2] = innerRadius*(float)Math.sin(j*p);
 				}
 		
-		for(int i=0; i<c.length; i++)
-			c[i] = 1;
-		
+		for(int i=0; i<c.length/6; i++)
+		{
+			c[i*6] = 0;
+			c[i*6+1] = 0;
+			c[i*6+2] = 1;
+			c[i*6+3] = 1;
+			c[i*6+4] = 0;
+			c[i*6+5] = 0;
+		}
 		// small circle first
 		// t is fixed, p varies from 0 to 2*pi
 		
@@ -43,7 +49,7 @@ public class torus extends Shape
 		{
 			for(int j=0; j<innerResolution-1; j++)
 			{
-				// four angles of the rectangualr are
+				// four angles of the rectangular are
 				// i*innerResolution+j, i*innerResolution+j+1
 				// (i+1)*innerResolution+j, (i+1)*innerResolution+j+1
 				indices[(i*outerResolution+j)*6]=i*innerResolution+j;
@@ -55,13 +61,13 @@ public class torus extends Shape
 				indices[(i*outerResolution+j)*6+5]=(i+1)*innerResolution+j+1;
 			}
 			// the corner of inner circle
-			indices[(i*outerResolution+innerResolution-1)*6]=i*innerResolution+innerResolution-1;
-			indices[(i*outerResolution+innerResolution-1)*6+1]=i*innerResolution+innerResolution;
-			indices[(i*outerResolution+innerResolution-1)*6+2]=(i+1)*innerResolution+innerResolution;
+			indices[(i*outerResolution+innerResolution-1)*6]=i*innerResolution;
+			indices[(i*outerResolution+innerResolution-1)*6+1]=(i+1)*innerResolution-1;
+			indices[(i*outerResolution+innerResolution-1)*6+2]=(i+2)*innerResolution-1;
 
-			indices[(i*outerResolution+innerResolution-1)*6+3]=i*innerResolution+innerResolution-1;
-			indices[(i*outerResolution+innerResolution-1)*6+4]=(i+1)*innerResolution+innerResolution-1;
-			indices[(i*outerResolution+innerResolution-1)*6+5]=(i+1)*innerResolution+innerResolution;
+			indices[(i*outerResolution+innerResolution-1)*6+3]=i*innerResolution;
+			indices[(i*outerResolution+innerResolution-1)*6+4]=(i+1)*innerResolution;
+			indices[(i*outerResolution+innerResolution-1)*6+5]=(i+2)*innerResolution-1;
 		}
 
 		// corner of outer circle
