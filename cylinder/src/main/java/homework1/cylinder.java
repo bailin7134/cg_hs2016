@@ -40,14 +40,14 @@ public class cylinder extends Shape
 			// lower center point
 			v[i*6*3+9] = 0;
 			v[i*6*3+10] = 0;
-			v[i*6*3+11] = 0;
+			v[i*6*3+11] = -height;
 			// side points
 			v[i*6*3+12] = radius * (float)Math.sin(theta*i); // x
 			v[i*6*3+13] = radius * (float)Math.cos(theta*i); // y
-			v[i*6*3+14] = 0; // z
+			v[i*6*3+14] = -height; // z
 			v[i*6*3+15] = radius * (float)Math.sin(theta*(i+1)); // x
 			v[i*6*3+16] = radius * (float)Math.cos(theta*(i+1)); // y
-			v[i*6*3+17] = 0; // z
+			v[i*6*3+17] = -height; // z
 		}
 
 		float[] c = new float[v.length];

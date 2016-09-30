@@ -27,14 +27,20 @@ public class torus extends Shape
 					v[(i*outerResolution+j)*3+2] = innerRadius*(float)Math.sin(j*p);
 				}
 		
-		for(int i=0; i<c.length/6; i++)
+		for(int i=0; i<c.length/12; i++)
 		{
-			c[i*6] = 0;
-			c[i*6+1] = 0;
-			c[i*6+2] = 1;
-			c[i*6+3] = 1;
-			c[i*6+4] = 0;
-			c[i*6+5] = 0;
+			c[i*12] = 0;
+			c[i*12*1] = 0;
+			c[i*12+2] = 1;
+			c[i*12+3] = 1;
+			c[i*12+4] = 0;
+			c[i*12+5] = 0;
+			c[i*12+6] = 1;
+			c[i*12+7] = 0;
+			c[i*12+8] = 0;
+			c[i*12+9] = 0;
+			c[i*12+10] = 0;
+			c[i*12+11] = 1;
 		}
 		// small circle first
 		// t is fixed, p varies from 0 to 2*pi

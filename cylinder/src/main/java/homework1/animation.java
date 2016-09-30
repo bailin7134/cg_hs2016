@@ -10,10 +10,6 @@ import javax.vecmath.*;
 import java.util.Timer;
 import java.util.TimerTask;
 
-/**
- * Implements a simple application that opens a 3D rendering window and 
- * shows a rotating cube.
- */
 public class animation
 {	
 	static RenderPanel renderPanel;
@@ -22,242 +18,80 @@ public class animation
 	static Shader diffuseShader;
 	static Material material;
 	static SimpleSceneManager sceneManager;
-	static Shape shape_cylinder1, shape_cylinder2, shape_cube;
+	static Shape shape_cycle1, shape_cycle2, shape_cycle3, shape_body1, shape_body2;
 	static float currentstep, basicstep;
-
-	/**
-	 * An extension of {@link GLRenderPanel} or {@link SWRenderPanel} to 
-	 * provide a call-back function for initialization. Here we construct
-	 * a simple 3D scene and start a timer task to generate an animation.
-	 */ 
-	public final static class SimpleRenderPanel extends GLRenderPanel
-	{
-		/**
-		 * Initialization call-back. We initialize our renderer here.
-		 * 
-		 * @param r	the render context that is associated with this render panel
-		 */
-		public void init(RenderContext r)
-		{
-			renderContext = r;
-			
-			// Make a simple geometric object: a
-			shape_cylinder1 = new cylinder(renderContext, 50, 1, 3);
-			//shape_cylinder2 = new cylinder(renderContext, 50, 1, 3);
-			//shape = new torus(renderContext, 2, 1, 50, 50);
-			//shape_cube = new cube(renderContext);
-								
-			// Make a scene manager and add the object
-			sceneManager = new SimpleSceneManager();
-			sceneManager.addShape(shape_cylinder1);
-			//sceneManager.addShape(shape_cylinder2);
-			//sceneManager.addShape(shape_cube);
-			//airplane = new animation(sceneManager, renderContext);
-			//airplane.setTransformation(new Matrix4f(0,-1,0,10, 1,0,0,0, 0,0,1,0, 0,0,0,1));
-
-			// Add the scene to the renderer
-			renderContext.setSceneManager(sceneManager);
-			
-			// Load some more shaders
-		    normalShader = renderContext.makeShader();
-		    try {
-		    	normalShader.load("../jrtr/shaders/normal.vert", "../jrtr/shaders/normal.frag");
-		    } catch(Exception e) {
-		    	System.out.print("Problem with shader:\n");
-		    	System.out.print(e.getMessage());
-		    }
 	
-		    diffuseShader = renderContext.makeShader();
-		    try {
-		    	diffuseShader.load("../jrtr/shaders/diffuse.vert", "../jrtr/shaders/diffuse.frag");
-		    } catch(Exception e) {
-		    	System.out.print("Problem with shader:\n");
-		    	System.out.print(e.getMessage());
-		    }
-
-		    // Make a material that can be used for shading
-			material = new Material();
-			material.shader = diffuseShader;
-			material.diffuseMap = renderContext.makeTexture();
-			try {
-				material.diffuseMap.load("../textures/plant.jpg");
-			} catch(Exception e) {				
-				System.out.print("Could not load texture.\n");
-				System.out.print(e.getMessage());
-			}
-
-			// Register a timer task
-		    Timer timer = new Timer();
-		    basicstep = 0.01f;
-		    currentstep = basicstep;
-		    timer.scheduleAtFixedRate(new AnimationTask(), 0, 10);
-		}
-	}
+	Matrix4f transformation;
 
 	static float anglestep = (float)(2*Math.PI/360);
 	static float angle = 0;
-	/**
-	 * A timer task that generates an animation. This task triggers
-	 * the redrawing of the 3D scene every time it is executed.
-	 */
-	public static class AnimationTask extends TimerTask
+	
+	public animation(SimpleSceneManager sceneManager, RenderContext renderContext)
 	{
-		public void run()
-		{
-			// Update transformation by rotating with angle "currentstep"
-			Matrix4f t = shape_cylinder1.getTransformation();
-			angle += anglestep;
-			t.setIdentity();
-			t.setTranslation(new Vector3f(2*(float)(Math.cos(angle)), 2*(float)(Math.sin(angle)), 0));
-			
-    		Matrix4f rotX = new Matrix4f();
-    		rotX.rotX(angle);
-    		Matrix4f rotY = new Matrix4f();
-    		rotY.rotY(angle);
-    		Matrix4f rotZ = new Matrix4f();
-    		rotZ.rotZ(angle);
-    		//t.mul(rotX);
-    		//t.mul(rotY);
-    		t.mul(rotZ);
-    		
-    		// cube position
-    		//Matrix4f t_cube = shape_cube.getTransformation();
-    		//t_cube.setIdentity();
-    		
-    		
-			/*		
-			Matrix4f rotZ = new Matrix4f();
-			rotZ.rotZ(currentstep/4);
-			Matrix4f forward = new Matrix4f();
-			forward.setIdentity();
-			forward.setTranslation(new Vector3f(currentstep, 0, 0));
-
-			t = airplane.getTransformation();
-			t.mul(rotZ);
-			t.mul(forward);
-			airplane.update(currentstep*8);
-			airplane.setTransformation(t);
-			*/
-			// Trigger redrawing of the render window
-			renderPanel.getCanvas().repaint(); 
-
-    		renderPanel.getCanvas().repaint(); 
-		}
+		//shape_cycle1 = new torus(renderContext, 0.6f, 0.4f, 50, 50);
+		//shape_cycle2 = new torus(renderContext, 0.6f, 0.4f, 50, 50);
+		shape_cycle1 = new cylinder(renderContext, 8, 1, 1);
+		shape_cycle2 = new cylinder(renderContext, 8, 1, 1);
+		shape_cycle3 = new cylinder(renderContext, 8, 0.2f, 5);
+		shape_body1 = new cube(renderContext);
+		shape_body2 = new cube(renderContext);
+		
+		sceneManager.addShape(shape_cycle1);
+		sceneManager.addShape(shape_cycle2);
+		sceneManager.addShape(shape_cycle3);
+		sceneManager.addShape(shape_body1);
+		sceneManager.addShape(shape_body2);
 	}
 
-	/**
-	 * A mouse listener for the main window of this application. This can be
-	 * used to process mouse events.
-	 */
-	public static class SimpleMouseListener implements MouseListener
+	public void setTransformation(Matrix4f t)
 	{
-    	public void mousePressed(MouseEvent e) {}
-    	public void mouseReleased(MouseEvent e) {}
-    	public void mouseEntered(MouseEvent e) {}
-    	public void mouseExited(MouseEvent e) {}
-    	public void mouseClicked(MouseEvent e) {}
+		transformation = t;
+		
+		Matrix4f t_body1 = new Matrix4f(t);
+		Matrix4f trans_body1 = new Matrix4f();
+		trans_body1.setIdentity();
+		trans_body1.setTranslation(new Vector3f(0, 1, 0));
+		t_body1.mul(trans_body1);
+		shape_body1.setTransformation(t_body1);
+   		
+		Matrix4f t_body2 = new Matrix4f(t);
+		Matrix4f trans_body2 = new Matrix4f();
+		trans_body2.setIdentity();
+		trans_body2.setTranslation(new Vector3f(0, -1, 0));
+		t_body2.mul(trans_body2);;
+		shape_body2.setTransformation(t_body2);
+
+		Matrix4f t_cycle1 = new Matrix4f(t);
+		Matrix4f trans_cycle1 = new Matrix4f();
+		trans_cycle1.rotZ(angle);
+		trans_cycle1.setTranslation(new Vector3f(-1, 2, 0));
+		t_cycle1.mul(trans_cycle1);
+		shape_cycle1.setTransformation(t_cycle1);
+   		
+		Matrix4f t_cycle2 = new Matrix4f(t);
+		Matrix4f trans_cycle2 = new Matrix4f();
+		trans_cycle2.rotZ(angle);
+		trans_cycle2.setTranslation(new Vector3f(-1, -2, 0));
+		t_cycle2.mul(trans_cycle2);
+		shape_cycle2.setTransformation(t_cycle2);
+   		
+		Matrix4f t_cycle3 = new Matrix4f(t);
+		Matrix4f trans_cycle3 = new Matrix4f();
+		trans_cycle3.rotX(angle*2);
+		trans_cycle3.setTranslation(new Vector3f(1, 0, 0));
+		t_cycle3.mul(trans_cycle3);
+		shape_cycle3.setTransformation(t_cycle3);
 	}
 	
-	/**
-	 * A key listener for the main window. Use this to process key events.
-	 * Currently this provides the following controls:
-	 * 's': stop animation
-	 * 'p': play animation
-	 * '+': accelerate rotation
-	 * '-': slow down rotation
-	 * 'd': default shader
-	 * 'n': shader using surface normals
-	 * 'm': use a material for shading
-	 */
-	public static class SimpleKeyListener implements KeyListener
+	public Matrix4f getTransformation()
 	{
-		public void keyPressed(KeyEvent e)
-		{
-			switch(e.getKeyChar())
-			{
-				case 's': {
-					// Stop animation
-					currentstep = 0;
-					break;
-				}
-				case 'p': {
-					// Resume animation
-					currentstep = basicstep;
-					break;
-				}
-				case '+': {
-					// Accelerate roation
-					currentstep += basicstep;
-					break;
-				}
-				case '-': {
-					// Slow down rotation
-					currentstep -= basicstep;
-					break;
-				}
-				case 'n': {
-					// Remove material from shape, and set "normal" shader
-					shape_cylinder1.setMaterial(null);
-					renderContext.useShader(normalShader);
-					break;
-				}
-				case 'd': {
-					// Remove material from shape, and set "default" shader
-					shape_cylinder1.setMaterial(null);
-					renderContext.useDefaultShader();
-					break;
-				}
-				case 'm': {
-					// Set a material for more complex shading of the shape
-					if(shape_cylinder1.getMaterial() == null) {
-						shape_cylinder1.setMaterial(material);
-					} else
-					{
-						shape_cylinder1.setMaterial(null);
-						renderContext.useDefaultShader();
-					}
-					break;
-				}
-			}
-			
-			// Trigger redrawing
-			renderPanel.getCanvas().repaint();
-		}
-		
-		public void keyReleased(KeyEvent e)
-		{
-		}
-
-		public void keyTyped(KeyEvent e)
-        {
-        }
-
+		return transformation;
 	}
 	
-	/**
-	 * The main function opens a 3D rendering window, implemented by the class
-	 * {@link SimpleRenderPanel}. {@link SimpleRenderPanel} is then called backed 
-	 * for initialization automatically. It then constructs a simple 3D scene, 
-	 * and starts a timer task to generate an animation.
-	 */
-	public static void main(String[] args)
-	{		
-		// Make a render panel. The init function of the renderPanel
-		// (see above) will be called back for initialization.
-		renderPanel = new SimpleRenderPanel();
-		
-		// Make the main window of this application and add the renderer to it
-		JFrame jframe = new JFrame("simple");
-		jframe.setSize(500, 500);
-		jframe.setLocationRelativeTo(null); // center of screen
-		jframe.getContentPane().add(renderPanel.getCanvas());// put the canvas into a JFrame window
-
-		// Add a mouse and key listener
-	    renderPanel.getCanvas().addMouseListener(new SimpleMouseListener());
-	    renderPanel.getCanvas().addKeyListener(new SimpleKeyListener());
-		renderPanel.getCanvas().setFocusable(true);   	    	    
-	    
-	    jframe.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-	    jframe.setVisible(true); // show window
+	public void angle_calc(float currentAngle)
+	{
+		angle = currentAngle;
 	}
+	
+
 }
