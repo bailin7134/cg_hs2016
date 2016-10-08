@@ -5,7 +5,11 @@ import jrtr.glrenderer.*;
 import jrtr.gldeferredrenderer.*;
 
 import javax.swing.*;
+
+import java.awt.Point;
 import java.awt.event.*;
+import java.io.IOException;
+
 import javax.vecmath.*;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -25,6 +29,10 @@ public class trackball
 	static ObjReader teapotReader;
 	static Shape teapot;
 	static float currentstep, basicstep;
+	static boolean mouseIsPressed;
+	static float v1PosX, v1PosY, v1PosZ, v2PosX, v2PosY, v2PosZ;
+	static Vector3f pressPos;
+	static Point v1PrePoint, v2PrePoint;
 
 	/**
 	 * An extension of {@link GLRenderPanel} or {@link SWRenderPanel} to 
@@ -40,45 +48,45 @@ public class trackball
 		 */
 		public void init(RenderContext r)
 		{
-			// read vertex of teapot from folder obj
+			renderContext = r;
+
+			VertexData vertexData;
 			teapotReader = new ObjReader();
 			try {
-				VertexData vertexData = teapotReader.read("/home/lbai/Desktop/CG_UniBE/cg_hs2016/obj/teapot.obj", 1f, renderContext);
-			} catch(Exception e) {
-				System.out.print("Cannot read teapot");
-		    	System.out.print(e.getMessage());
+				vertexData = teapotReader.read("..\\..\\..\\..\\..\\obj\\teapot.obj", 1.0f, renderContext);
+			} catch (IOException e) {
+				vertexData = createCube();
+				System.out.print("Failed to read teapot!");
+				System.out.print(e.getMessage());
 			}
-			
-			// write vertex into scene manger
-								
+
+
 			// Make a scene manager and add the object
 			sceneManager = new SimpleSceneManager();
 			teapot = new Shape(vertexData);
 			sceneManager.addShape(teapot);
 
-			renderContext = r;
-			
 			// Add the scene to the renderer
 			renderContext.setSceneManager(sceneManager);
-			
-			// Load some more shaders
-		    normalShader = renderContext.makeShader();
-			try {
-		    	normalShader.load("../jrtr/shaders/normal.vert", "../jrtr/shaders/normal.frag");
-		    } catch(Exception e) {
-		    	System.out.print("Problem with shader:\n");
-		    	System.out.print(e.getMessage());
-		    }
-	
-		    diffuseShader = renderContext.makeShader();
-		    try {
-		    	diffuseShader.load("../jrtr/shaders/diffuse.vert", "../jrtr/shaders/diffuse.frag");
-		    } catch(Exception e) {
-		    	System.out.print("Problem with shader:\n");
-		    	System.out.print(e.getMessage());
-		    }
 
-		    // Make a material that can be used for shading
+			// Load some more shaders
+			normalShader = renderContext.makeShader();
+			try {
+				normalShader.load("../jrtr/shaders/normal.vert", "../jrtr/shaders/normal.frag");
+			} catch(Exception e) {
+				System.out.print("Problem with shader:\n");
+				System.out.print(e.getMessage());
+			}
+
+			diffuseShader = renderContext.makeShader();
+			try {
+				diffuseShader.load("../jrtr/shaders/diffuse.vert", "../jrtr/shaders/diffuse.frag");
+			} catch(Exception e) {
+				System.out.print("Problem with shader:\n");
+				System.out.print(e.getMessage());
+			}
+
+			// Make a material that can be used for shading
 			material = new Material();
 			material.shader = diffuseShader;
 			material.diffuseMap = renderContext.makeTexture();
@@ -90,12 +98,68 @@ public class trackball
 			}
 
 			// Register a timer task
-		    Timer timer = new Timer();
-		    basicstep = 0.01f;
-		    currentstep = basicstep;
-		    timer.scheduleAtFixedRate(new AnimationTask(), 0, 10);
+			Timer timer = new Timer();
+			basicstep = 0.01f;
+			currentstep = basicstep;
+			timer.scheduleAtFixedRate(new AnimationTask(), 0, 10);
+		}
+
+		private VertexData createCube(){
+			// Make a simple geometric object: a cube
+
+			// The vertex positions of the cube
+			float v[] = {-1,-1,1, 1,-1,1, 1,1,1, -1,1,1,		// front face
+					-1,-1,-1, -1,-1,1, -1,1,1, -1,1,-1,	// left face
+					1,-1,-1,-1,-1,-1, -1,1,-1, 1,1,-1,		// back face
+					1,-1,1, 1,-1,-1, 1,1,-1, 1,1,1,		// right face
+					1,1,1, 1,1,-1, -1,1,-1, -1,1,1,		// top face
+					-1,-1,1, -1,-1,-1, 1,-1,-1, 1,-1,1};	// bottom face
+
+			// The vertex normals 
+			float n[] = {0,0,1, 0,0,1, 0,0,1, 0,0,1,			// front face
+					-1,0,0, -1,0,0, -1,0,0, -1,0,0,		// left face
+					0,0,-1, 0,0,-1, 0,0,-1, 0,0,-1,		// back face
+					1,0,0, 1,0,0, 1,0,0, 1,0,0,			// right face
+					0,1,0, 0,1,0, 0,1,0, 0,1,0,			// top face
+					0,-1,0, 0,-1,0, 0,-1,0, 0,-1,0};		// bottom face
+
+			// The vertex colors
+			float c[] = {1,0,0, 1,0,0, 1,0,0, 1,0,0,
+					0,1,0, 0,1,0, 0,1,0, 0,1,0,
+					1,0,0, 1,0,0, 1,0,0, 1,0,0,
+					0,1,0, 0,1,0, 0,1,0, 0,1,0,
+					0,0,1, 0,0,1, 0,0,1, 0,0,1,
+					0,0,1, 0,0,1, 0,0,1, 0,0,1};
+
+			// Texture coordinates 
+			float uv[] = {0,0, 1,0, 1,1, 0,1,
+					0,0, 1,0, 1,1, 0,1,
+					0,0, 1,0, 1,1, 0,1,
+					0,0, 1,0, 1,1, 0,1,
+					0,0, 1,0, 1,1, 0,1,
+					0,0, 1,0, 1,1, 0,1};
+
+			// Construct a data structure that stores the vertices, their
+			// attributes, and the triangle mesh connectivity
+			VertexData vertexData = renderContext.makeVertexData(24);
+			vertexData.addElement(c, VertexData.Semantic.COLOR, 3);
+			vertexData.addElement(v, VertexData.Semantic.POSITION, 3);
+			vertexData.addElement(n, VertexData.Semantic.NORMAL, 3);
+			vertexData.addElement(uv, VertexData.Semantic.TEXCOORD, 2);
+
+			// The triangles (three vertex indices for each triangle)
+			int indices[] = {0,2,3, 0,1,2,			// front face
+					4,6,7, 4,5,6,			// left face
+					8,10,11, 8,9,10,		// back face
+					12,14,15, 12,13,14,	// right face
+					16,18,19, 16,17,18,	// top face
+					20,22,23, 20,21,22};	// bottom face
+
+			vertexData.addIndices(indices);
+			return vertexData;
 		}
 	}
+
 
 	/**
 	 * A timer task that generates an animation. This task triggers
@@ -105,8 +169,124 @@ public class trackball
 	{
 		public void run()
 		{
-    		// Trigger redrawing of the render window
-    		renderPanel.getCanvas().repaint(); 
+			Vector3f v1 = new Vector3f(), v2 = new Vector3f();
+			Point v1Point, v2Point;
+			
+			// store the vector v1, when mouse is pressed
+			if(mouseIsPressed)
+			{
+				v1Point = renderPanel.getCanvas().getMousePosition();
+				if(v1Point == null)
+				{
+					v1Point = v1PrePoint;
+					System.out.println("v1Point"+v1Point.getX()+","+v1Point.getY());
+					System.out.println("v1PrePoint"+v1PrePoint.getX()+","+v1PrePoint.getY());
+					System.out.println("null point get");
+				}
+				else
+					v1PrePoint = v1Point;
+				
+				v1 = prtOnSphere(v1Point);
+				/*
+	    		v1PosZ = 1-v1PosX*v1PosX-v1PosY*v1PosY;
+	    		if(v1PosZ <= 0)
+	    			v1PosZ = 0;
+	    		v1PosZ = (float)Math.sqrt((double)v1PosZ);
+	    		v1 = new Vector3f(v1PosX, v1PosY, v1PosZ);
+	    		v1.normalize();
+				*/
+				try {
+				    // wait until the mouse moves
+				    Thread.sleep(100);
+				} catch ( java.lang.InterruptedException ie) {
+				    System.out.println(ie);
+				}
+			}
+			
+			// check the vector v2
+			if(mouseIsPressed)
+			{
+				v2Point = renderPanel.getCanvas().getMousePosition();
+				if(v2Point == null)
+				{
+					v2Point = v2PrePoint;
+					System.out.println("v2Point"+v2Point.getX()+","+v2Point.getY());
+					System.out.println("v2PrePoint"+v2PrePoint.getX()+","+v2PrePoint.getY());
+					System.out.println("null point get");
+				}
+				else
+					v2PrePoint = v2Point;
+				
+				v2 = prtOnSphere(v2Point);
+				/*
+				Point point = renderPanel.getCanvas().getMousePosition();
+				float v2PosX = (float)point.getX();
+				float v2PosY = (float)point.getY();
+				float v2PosZ = 1-v2PosX*v2PosX-v2PosY*v2PosY;
+	    		if(v2PosZ <= 0)
+	    			v2PosZ = 0;
+	    		v2PosZ = (float)Math.sqrt((double)v2PosZ);
+	    		v2 = new Vector3f(v2PosX, v2PosY, v2PosZ);
+	    		v2.normalize();
+	    		System.out.println("mouseDragged"+v2PosX+","+v2PosY);
+	    		*/
+			}
+			
+			// rotation between the points
+			if(!v1.equals(v2))
+			{
+				Vector3f axis = new Vector3f(), rt = new Vector3f();;
+				double theta;
+				Quat4f delta = new Quat4f(), q = new Quat4f();
+				Matrix3f r = new Matrix3f();
+
+				System.out.println("axis v1PrePoint"+v1PrePoint.getX()+","+v1PrePoint.getY());
+				System.out.println("axis v2PrePoint"+v2PrePoint.getX()+","+v2PrePoint.getY());
+				axis.cross(v1, v2);
+				System.out.println("axis"+axis.x+","+axis.y+","+axis.z);
+				theta = v1.angle(v2);
+				delta.set(new AxisAngle4f(axis.x, axis.y, axis.z, (float)theta));
+				
+				// get shape transformation
+				Matrix4f t = new Matrix4f(teapot.getTransformation());
+				t.get(rt);
+				t.get(r);
+				q.set(r);
+				delta.mul(q);
+				t.set(delta,rt,1);
+				teapot.setTransformation(t);
+			}
+			renderPanel.getCanvas().repaint();
+		}
+		
+		////////////
+		//need adaptation !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		private Vector3f prtOnSphere(Point point)
+		{
+			int height = renderPanel.getCanvas().getHeight();
+			int width = renderPanel.getCanvas().getWidth();
+			double r = (double) Math.min(height, width);
+
+			double x = point.getX()- width/2;
+			double y = height/2 - point.getY();
+
+			x = x*2/r;
+			y = y*2/r;
+
+			if(Math.abs(x) > 1 || Math.abs(y)>1)
+				return null;
+
+			double det = 1 - x*x - y*y;
+
+			if(det <= 0)
+				return null;
+
+			double z = Math.sqrt(det);
+
+			Vector3f v = new Vector3f((float) x, (float) y, (float) z);
+			v.normalize();
+			return v;
+			
 		}
 	}
 
@@ -116,11 +296,36 @@ public class trackball
 	 */
 	public static class SimpleMouseListener implements MouseListener
 	{
-    	public void mousePressed(MouseEvent e) {}
-    	public void mouseReleased(MouseEvent e) {}
-    	public void mouseEntered(MouseEvent e) {}
-    	public void mouseExited(MouseEvent e) {}
-    	public void mouseClicked(MouseEvent e) {}
+    	public void mousePressed(MouseEvent e) {
+    		mouseIsPressed = true;
+    		v1PosX = e.getX();
+    		v1PosY = e.getY();
+    		System.out.println("mousePressed"+v1PosX+","+v1PosY);
+    	}
+    	public void mouseReleased(MouseEvent e) {
+    		mouseIsPressed = false;
+    	}
+    	public void mouseEntered(MouseEvent e) {
+    		/*
+    		v1PosX = e.getX();
+    		v1PosY = e.getY();
+    		System.out.println("mouseEntered"+v1PosX+","+v1PosY);
+    		*/
+    	}
+    	public void mouseExited(MouseEvent e) {
+    		/*
+    		v1PosX = e.getX();
+    		v1PosY = e.getY();
+    		System.out.println("mouseExited"+v1PosX+","+v1PosY);
+    		*/
+    	}
+    	public void mouseClicked(MouseEvent e) {
+    		/*
+    		v1PosX = e.getX();
+    		v1PosY = e.getY();
+    		System.out.println(v1PosY);
+    		*/
+    	}
 	}
 	
 	/**
