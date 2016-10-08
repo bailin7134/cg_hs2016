@@ -14,6 +14,7 @@ import javax.vecmath.Matrix4f;
 public class Frustum {
 
 	private Matrix4f projectionMatrix;
+	private float near, far, aspectRatio, fov;
 	
 	/**
 	 * Construct a default viewing frustum. The frustum is given by a 
@@ -21,12 +22,11 @@ public class Frustum {
 	 */
 	public Frustum()
 	{
-		projectionMatrix = new Matrix4f();
-		float f[] = {2.f, 0.f, 0.f, 0.f, 
-					 0.f, 2.f, 0.f, 0.f,
-				     0.f, 0.f, -1.02f, -2.02f,
-				     0.f, 0.f, -1.f, 0.f};
-		projectionMatrix.set(f);
+		// set default values
+		setNear(1f);
+		setFar(100f);
+		setAspect(1f);
+		getFovGrad(60f);
 	}
 	
 	/**
@@ -38,5 +38,58 @@ public class Frustum {
 	public Matrix4f getProjectionMatrix()
 	{
 		return projectionMatrix;
+	}
+
+	public void setNear(float near)
+	{
+		this.near = near;
+		update();
+	}
+
+	public float getNear()
+	{
+		return near;
+	}
+
+	public void setFar(float far)
+	{
+		this.far = far;
+		update();
+	}
+
+	public float getFar()
+	{
+		return far;
+	}
+
+	public void setAspect(float aspectRatio)
+	{
+		this.aspectRatio = aspectRatio;
+		update();
+	}
+
+	public float getAspect()
+	{
+		return aspectRatio;
+	}
+
+	public void getFovGrad(float fov)
+	{
+		this.fov = (float) (fov/180*Math.PI);
+		update();
+	}
+
+	public float getFov()
+	{
+		return fov;
+	}
+
+	private void update()
+	{
+		projectionMatrix = new Matrix4f(
+				(float) (1/(aspectRatio*Math.tan(fov/2))), 0f, 0f, 0f, 
+				0f, (float) (1/Math.tan(fov/2)), 0f, 0f,
+				0f, 0f, (float) (near+far)/(near-far), (float) (2*near*far/(near-far)),
+				0f, 0f, -1f, 0f);
 	}
 }

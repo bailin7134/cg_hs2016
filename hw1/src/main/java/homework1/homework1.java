@@ -57,12 +57,12 @@ public class homework1
 
 			if(DEBUG=="cylinder")
 			{
-			shape = new Cylinder(renderContext, 50, 1, 3);
+			shape = new Cylinder(renderContext, 3, 1, 3);
 			sceneManager.addShape(shape);
 			}
 			if(DEBUG=="torus")
 			{
-			shape = new Torus(renderContext, 2, 1, 50, 50);
+			shape = new Torus(renderContext, 2, 1, 4, 4);
 			sceneManager.addShape(shape);
 			}
 			if(DEBUG=="cube")
