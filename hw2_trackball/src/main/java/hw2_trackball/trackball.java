@@ -55,7 +55,7 @@ public class trackball
 			try {
 				vertexData = teapotReader.read("..\\..\\..\\..\\..\\obj\\teapot.obj", 1.0f, renderContext);
 			} catch (IOException e) {
-				vertexData = createCube();
+				vertexData = defaultShape();
 				System.out.print("Failed to read teapot!");
 				System.out.print(e.getMessage());
 			}
@@ -104,9 +104,7 @@ public class trackball
 			timer.scheduleAtFixedRate(new AnimationTask(), 0, 10);
 		}
 
-		private VertexData createCube(){
-			// Make a simple geometric object: a cube
-
+		private VertexData defaultShape(){
 			// The vertex positions of the cube
 			float v[] = {-1,-1,1, 1,-1,1, 1,1,1, -1,1,1,		// front face
 					-1,-1,-1, -1,-1,1, -1,1,1, -1,1,-1,	// left face
