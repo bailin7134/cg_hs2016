@@ -14,8 +14,6 @@ import javax.vecmath.*;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import java.util.Random;
-
 /**
  * Implements a simple application that opens a 3D rendering window and 
  * shows a rotating cube.
@@ -361,17 +359,20 @@ public class fracLand
 				c.getColumn(2, z);
 				
 				rot.setIdentity();
-				rot.setRotation(new AxisAngle4f(x.x, x.y, x.z, alpha));
+//				rot.setRotation(new AxisAngle4f(1, 0, 0, alpha));
+				rot.rotX(alpha);
 				rot.transform(y);
 				rot.transform(z);
 
 				rot.setIdentity();
-				rot.setRotation(new AxisAngle4f(y.x, y.y, y.z, beta));
+//				rot.setRotation(new AxisAngle4f(0, 1, 0, beta));
+				rot.rotY(beta);
 				rot.transform(x);
 				rot.transform(z);
 
 				rot.setIdentity();
-				rot.setRotation(new AxisAngle4f(z.x, z.y, z.z, gamma));
+//				rot.setRotation(new AxisAngle4f(0, 0, 1, gamma));
+				rot.rotZ(gamma);
 				rot.transform(x);
 				rot.transform(y);
 
