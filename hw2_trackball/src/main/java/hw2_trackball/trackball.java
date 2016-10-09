@@ -53,7 +53,7 @@ public class trackball
 			VertexData vertexData;
 			teapotReader = new ObjReader();
 			try {
-				vertexData = teapotReader.read("..\\..\\..\\..\\..\\obj\\teapot.obj", 1.0f, renderContext);
+				vertexData = teapotReader.read("../../../../../obj/teapot.obj", 1.0f, renderContext);
 			} catch (IOException e) {
 				vertexData = defaultShape();
 				System.out.print("Failed to read teapot!");
