@@ -62,7 +62,7 @@ public class fracLand
 			renderContext = r;
 
 
-			VertexData vertexData = createLandscape(4, 2, renderContext);
+			VertexData vertexData = createLandscape(1, 1, renderContext);
 			//VertexData vertexData = createCube();
 			VertexData vertexDataAirplane;
 			objReader = new ObjReader();
@@ -131,36 +131,46 @@ public class fracLand
 			return (float)Math.random()*range+min;
 		}
 
-		private VertexData createLandscape(int iter, float intervalLen, RenderContext renderContext){
+		private VertexData createLandscape(int iter, int imgSize, RenderContext renderContext){
 			// define the 2D map size is 2
-			int sideLen = (int) Math.pow(2, iter)+1;
+//			int sideLenIter = 2;
+			int sideLen = (int) Math.pow(2, imgSize)+1;
+			int prtNum = (int) Math.pow(2, iter)+1;
+			int midLen = (sideLen-1)/2;
 			float[][] mapHeight = new float[sideLen][sideLen];
 			float midAvg;
 			float smoothValue = (float)Math.pow(2, -1);
 			
 			// step 1 : initialize four cornor's value (height)
 			mapHeight[0][0] = 8;
-			mapHeight[0][sideLen-1] = 0;
+			mapHeight[0][sideLen-1] = 7;
 			mapHeight[sideLen-1][0] = 1;
-			mapHeight[sideLen-1][sideLen-1] = 5;
+			mapHeight[sideLen-1][sideLen-1] = 4;
+			// diamond
+			mapHeight[midLen][midLen] = (mapHeight[0][0]+mapHeight[0][sideLen-1]+mapHeight[sideLen-1][0]+mapHeight[sideLen-1][sideLen-1])/4;
 			
 			// step 2: assign height to map mesh according to diamond and square
 			for(int iterVar=0; iterVar<iter; iterVar++){
 				int subMapLen = (sideLen-1)>>iterVar;
 				int subMapMid = subMapLen>>1;
 				int subMapNum = 1<<iterVar;
+				int x,y;
 
 				/*
 				 * square
 				 * find the middle point of each square
-				 */
+				*/
 				for(int i=0; i<subMapNum; i++){
 					for(int j=0; j<subMapNum; j++){
 						// average height of fours corner points of this square
-						midAvg = (mapHeight[i*subMapLen][j*subMapLen] + mapHeight[i*subMapLen][(j+1)*subMapLen] + mapHeight[(i+1)*subMapLen][j*subMapLen] + mapHeight[(i+1)*subMapLen][(j+1)*subMapLen])/4;
-						mapHeight[i*subMapLen+subMapMid][j*subMapLen+subMapMid] = midAvg + rand()*smoothValue;
+						x=subMapMid+i*subMapLen;
+						y=subMapMid+j*subMapLen;
+						midAvg = (mapHeight[x-subMapMid][y-subMapMid] + mapHeight[x-subMapMid][y+subMapMid] + mapHeight[x+subMapMid][y+subMapMid] + mapHeight[x+subMapMid][y-subMapMid])/4;
+						System.out.println("square: "+mapHeight[x-subMapMid][y-subMapMid]+","+ mapHeight[x-subMapMid][y+subMapMid]+","+ mapHeight[x+subMapMid][y+subMapMid]+","+ mapHeight[x+subMapMid][y-subMapMid]);
+						mapHeight[x][y] = midAvg;// + rand()*smoothValue;
 					}
 				}
+				System.out.println("square: "+mapHeight[midLen][midLen]);
 
 				/*
 				 * diamond
@@ -169,93 +179,135 @@ public class fracLand
 				 * over-written,
 				 * the points on the board of map have only three points to
 				 * calculate the average height;
-				 */
+				*/
+
 				for(int i=0; i<subMapNum; i++){
 					for(int j=0; j<subMapNum; j++){
 						if(i==0){
 							midAvg = (mapHeight[0][j*subMapLen]+mapHeight[subMapMid][j*subMapLen+subMapMid]+mapHeight[0][(j+1)*subMapLen])/3;
-							mapHeight[0][j*subMapLen + subMapMid]=midAvg+rand()*smoothValue;
+							mapHeight[0][j*subMapLen + subMapMid]=midAvg;// +rand()*smoothValue;
 						}
 						else{
 							midAvg = (mapHeight[i*subMapLen][j*subMapLen]+mapHeight[i*subMapLen+subMapMid][j*subMapLen+subMapMid]+mapHeight[i*subMapLen][(j+1)*subMapLen] + mapHeight[i*subMapLen-subMapMid][j*subMapLen+subMapMid])/4;
-							mapHeight[i*subMapLen][j*subMapLen + subMapMid] = midAvg+rand()*smoothValue;
+							mapHeight[i*subMapLen][j*subMapLen + subMapMid] = midAvg;// +rand()*smoothValue;
 						}
 						if(i==subMapNum-1){
 							midAvg = (mapHeight[(i+1)*subMapLen][j*subMapLen]+mapHeight[i*subMapLen+subMapMid][j*subMapLen+subMapMid] + mapHeight[(i+1)*subMapLen][(j+1)*subMapLen])/3;
-							mapHeight[(i+1)*subMapLen][j*subMapLen + subMapMid] = midAvg+rand()*smoothValue;
+							mapHeight[(i+1)*subMapLen][j*subMapLen + subMapMid] = midAvg;// +rand()*smoothValue;
 						}
 						else{
 							midAvg = (mapHeight[(i+1)*subMapLen][j*subMapLen]+mapHeight[i*subMapLen+subMapMid][j*subMapLen+subMapMid]+mapHeight[(i+1)*subMapLen][(j+1)*subMapLen]+mapHeight[(i+1)*subMapLen+subMapMid][j*subMapLen+subMapMid])/4;
-							mapHeight[(i+1)*subMapLen][j*subMapLen + subMapMid] = midAvg+rand()*smoothValue;
+							mapHeight[(i+1)*subMapLen][j*subMapLen + subMapMid] = midAvg;// +rand()*smoothValue;
 						}
 						
 						if(j==0){
 							midAvg = (mapHeight[(i+1)*subMapLen][0]+mapHeight[i*subMapLen+subMapMid][subMapMid]+mapHeight[i*subMapLen][0])/3;
-							mapHeight[i*subMapLen + subMapMid][0] = midAvg+rand()*smoothValue;
+							mapHeight[i*subMapLen + subMapMid][0] = midAvg;// +rand()*smoothValue;
 						}
 						else{
 							midAvg = (mapHeight[i*subMapLen][j*subMapLen] + mapHeight[(i+1)*subMapLen][j*subMapLen]+mapHeight[i*subMapLen+subMapMid][j*subMapLen+subMapMid]+mapHeight[i*subMapLen+subMapMid][j*subMapLen-subMapMid])/4;
-							mapHeight[i*subMapLen + subMapMid][j*subMapLen] = midAvg+rand()*smoothValue;
+							mapHeight[i*subMapLen + subMapMid][j*subMapLen] = midAvg;// +rand()*smoothValue;
 						}
 						if(j==subMapNum-1){
 							midAvg = (mapHeight[i*subMapLen+subMapMid][j*subMapLen+subMapMid]+mapHeight[(i+1)*subMapLen][(j+1)*subMapLen]+mapHeight[i*subMapLen][(j+1)*subMapLen])/3;
-							mapHeight[i*subMapLen+subMapMid][(j+1)*subMapLen] = midAvg+rand()*smoothValue;
+							mapHeight[i*subMapLen+subMapMid][(j+1)*subMapLen] = midAvg;// +rand()*smoothValue;
 						}
 						else{
 							midAvg = (mapHeight[i*subMapLen+subMapMid][j*subMapLen+subMapMid]+mapHeight[(i+1)*subMapLen][(j+1)*subMapLen]+mapHeight[i*subMapLen+subMapMid][(j+1)*subMapLen+subMapMid]+mapHeight[i*subMapLen][(j+1)*subMapLen])/4;
-							mapHeight[i*subMapLen+subMapMid][(j+1)*subMapLen] =  midAvg+rand()*smoothValue;
+							mapHeight[i*subMapLen+subMapMid][(j+1)*subMapLen] =  midAvg;// +rand()*smoothValue;
 						}
 					}
 				}
 			}
+			
+			for(int prtH = 0; prtH<sideLen; prtH++){
+				for(int prtW = 0; prtW<sideLen; prtW++){
+					System.out.print(mapHeight[prtH][prtW]+",\t\t");
+				}
+				System.out.println();
+			}
+			
+
+			int i1, j1;
+			float maxValue=0, minValue=8;
+			for(i1 = 0; i1 < sideLen; i1++)
+				for(j1 = 0; j1 < sideLen; j1++){
+					if(maxValue<mapHeight[i1][j1])
+						maxValue = mapHeight[i1][j1];
+					if(minValue>mapHeight[i1][j1])
+						minValue = mapHeight[i1][j1];
+				}
+			System.out.println("max value is: "+maxValue+"min value is: "+minValue);
 
 			// step 3 build the essential element of vertex
-			float[] v = new float[sideLen*sideLen*3];
+			float[] v = new float[prtNum*prtNum*3];
 			float[] c = new float[v.length];
 
 			/*
 			 * assign value from (0,0) to (sideLen-1,sideLen-1)
 			 * row by row
 			 */
-			for(int i=0; i<sideLen; i++)
-				for(int j=0; j<sideLen; j++)
+			for(int i=0; i<prtNum; i++)
+				for(int j=0; j<prtNum; j++)
 				{
-					v[(i*sideLen+j)*3] = intervalLen*i-sideLen;
-					v[(i*sideLen+j)*3+1] = intervalLen*j-sideLen;
-					v[(i*sideLen+j)*3+2] = mapHeight[i][j];
+					v[(i*prtNum+j)*3] = i-midLen;
+					v[(i*prtNum+j)*3+1] = j-midLen;
+					v[(i*prtNum+j)*3+2] = mapHeight[i][j];
+					System.out.println("zuobiao: "+v[(i*prtNum+j)*3]+","+v[(i*prtNum+j)*3+1]+","+v[(i*prtNum+j)*3+2]);
 				}
 
-			for(int i=0; i<sideLen; i++)
-				for(int j=0; j<sideLen; j++)
+
+			for(int prtH = 0; prtH<v.length; prtH++)
+				System.out.print(v[prtH]);
+			System.out.println(" ");
+
+			for(int i=0; i<prtNum; i++)
+				for(int j=0; j<prtNum; j++)
 				{
-					if(mapHeight[i][j]>6){
-						c[(i*sideLen+j)*3] = 0.25f;
-						c[(i*sideLen+j)*3+1] = 0.25f;
-						c[(i*sideLen+j)*3+2] = 0.25f;
+					if(mapHeight[i][j]>(maxValue+minValue)/2){
+						c[(i*prtNum+j)*3] = 1f;
+						c[(i*prtNum+j)*3+1] = 1f;
+						c[(i*prtNum+j)*3+2] = 1f;
 					}
-					if(mapHeight[i][j]>15){
-						c[(i*sideLen+j)*3] = 1;
-						c[(i*sideLen+j)*3+1] = 1;
-						c[(i*sideLen+j)*3+2] = 1;
+					if(mapHeight[i][j]<=(maxValue+minValue)/2){
+						c[(i*prtNum+j)*3] = 1;
+						c[(i*prtNum+j)*3+1] = 0;
+						c[(i*prtNum+j)*3+2] = 0;
 					}
 				}
 			// Construct a data structure that stores the vertices, their
 			// attributes, and the triangle mesh connectivity
-			VertexData vertexData = renderContext.makeVertexData(sideLen*sideLen);
+			VertexData vertexData = renderContext.makeVertexData(prtNum*prtNum);
 			vertexData.addElement(c, VertexData.Semantic.COLOR, 3);
 			vertexData.addElement(v, VertexData.Semantic.POSITION, 3);
 
-			int indices[] = new int[(sideLen-1)*(sideLen-1)*2*3];
-			for(int i=0; i<sideLen-1; i++){
-				for(int j=0; j<sideLen-1; j++){
-					indices[(i*(sideLen-1)+j)*6]   = sideLen*i+j;			// first triangle
-					indices[(i*(sideLen-1)+j)*6+1] = sideLen*i+j+1;
-					indices[(i*(sideLen-1)+j)*6+2] = (sideLen+1)*i+j+1;
-					indices[(i*(sideLen-1)+j)*6+3] = sideLen*i+j;			// second  triangle
-					indices[(i*(sideLen-1)+j)*6+4] = (sideLen+1)*i+j;
-					indices[(i*(sideLen-1)+j)*6+5] = (sideLen+1)*i+j+1;
+			int indices[] = new int[(prtNum-1)*(prtNum-1)*2*3];
+			int a = 0;
+			int t1,t2,t3,t4,t5,t6;
+			for(int i=0; i<prtNum-1; i++){
+				for(int j=0; j<prtNum-1; j++){
+					indices[a++] = prtNum*i+j;			// first triangle
+					indices[a++] = prtNum*i+j+1;
+					indices[a++] = prtNum*(i+1)+j+1;
+					indices[a++] = prtNum*i+j;			// second  triangle
+					indices[a++] = prtNum*(i+1)+j;
+					indices[a++] = prtNum*(i+1)+j+1;
+					System.out.println("round: "+i+","+j);
+					t1 = prtNum*i+j;			// first triangle
+					t2 = prtNum*i+j+1;
+					t3 = prtNum*(i+1)+j+1;
+					t4 = prtNum*i+j;			// second  triangle
+					t5 = prtNum*(i+1)+j;
+					t6 = prtNum*(i+1)+j+1;
+					System.out.println(t1+","+t2+","+t3);
+					System.out.println(t4+","+t5+","+t6);
 				}
 			}
+			System.out.println("length="+indices.length);
+			for(int prtH = 0; prtH<indices.length; prtH++)
+				System.out.print(indices[prtH]+",");
+			System.out.println(" ");
+			
 			vertexData.addIndices(indices);
 			return vertexData;
 		}
