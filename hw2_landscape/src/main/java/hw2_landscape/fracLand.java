@@ -220,8 +220,8 @@ public class fracLand
 			for(int i=0; i<sideLen; i++)
 				for(int j=0; j<sideLen; j++)
 				{
-					v[(i*sideLen+j)*3] = intervalLen*i;
-					v[(i*sideLen+j)*3+1] = intervalLen*j;
+					v[(i*sideLen+j)*3] = intervalLen*i-sideLen;
+					v[(i*sideLen+j)*3+1] = intervalLen*j-sideLen;
 					v[(i*sideLen+j)*3+2] = mapHeight[i][j];
 				}
 

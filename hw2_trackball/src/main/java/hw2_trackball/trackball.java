@@ -33,6 +33,7 @@ public class trackball
 	static float v1PosX, v1PosY, v1PosZ, v2PosX, v2PosY, v2PosZ;
 	static Vector3f pressPos;
 	static Point v1PrePoint, v2PrePoint;
+	static boolean outSide;
 
 	/**
 	 * An extension of {@link GLRenderPanel} or {@link SWRenderPanel} to 
@@ -53,7 +54,7 @@ public class trackball
 			VertexData vertexData;
 			teapotReader = new ObjReader();
 			try {
-				vertexData = teapotReader.read("../../../../../obj/teapot.obj", 1.0f, renderContext);
+				vertexData = teapotReader.read("../obj/teapot.obj", 1.0f, renderContext);
 			} catch (IOException e) {
 				vertexData = defaultShape();
 				System.out.print("Failed to read teapot!");
@@ -99,60 +100,77 @@ public class trackball
 
 			// Register a timer task
 			Timer timer = new Timer();
-			basicstep = 0.01f;
+			basicstep = 0.1f;
 			currentstep = basicstep;
 			timer.scheduleAtFixedRate(new AnimationTask(), 0, 10);
 		}
 
 		private VertexData defaultShape(){
-			// The vertex positions of the cube
-			float v[] = {-1,-1,1, 1,-1,1, 1,1,1, -1,1,1,		// front face
-					-1,-1,-1, -1,-1,1, -1,1,1, -1,1,-1,	// left face
-					1,-1,-1,-1,-1,-1, -1,1,-1, 1,1,-1,		// back face
-					1,-1,1, 1,-1,-1, 1,1,-1, 1,1,1,		// right face
-					1,1,1, 1,1,-1, -1,1,-1, -1,1,1,		// top face
-					-1,-1,1, -1,-1,-1, 1,-1,-1, 1,-1,1};	// bottom face
-
-			// The vertex normals 
-			float n[] = {0,0,1, 0,0,1, 0,0,1, 0,0,1,			// front face
-					-1,0,0, -1,0,0, -1,0,0, -1,0,0,		// left face
-					0,0,-1, 0,0,-1, 0,0,-1, 0,0,-1,		// back face
-					1,0,0, 1,0,0, 1,0,0, 1,0,0,			// right face
-					0,1,0, 0,1,0, 0,1,0, 0,1,0,			// top face
-					0,-1,0, 0,-1,0, 0,-1,0, 0,-1,0};		// bottom face
-
-			// The vertex colors
-			float c[] = {1,0,0, 1,0,0, 1,0,0, 1,0,0,
-					0,1,0, 0,1,0, 0,1,0, 0,1,0,
-					1,0,0, 1,0,0, 1,0,0, 1,0,0,
-					0,1,0, 0,1,0, 0,1,0, 0,1,0,
-					0,0,1, 0,0,1, 0,0,1, 0,0,1,
-					0,0,1, 0,0,1, 0,0,1, 0,0,1};
-
-			// Texture coordinates 
-			float uv[] = {0,0, 1,0, 1,1, 0,1,
-					0,0, 1,0, 1,1, 0,1,
-					0,0, 1,0, 1,1, 0,1,
-					0,0, 1,0, 1,1, 0,1,
-					0,0, 1,0, 1,1, 0,1,
-					0,0, 1,0, 1,1, 0,1};
-
-			// Construct a data structure that stores the vertices, their
-			// attributes, and the triangle mesh connectivity
-			VertexData vertexData = renderContext.makeVertexData(24);
-			vertexData.addElement(c, VertexData.Semantic.COLOR, 3);
-			vertexData.addElement(v, VertexData.Semantic.POSITION, 3);
-			vertexData.addElement(n, VertexData.Semantic.NORMAL, 3);
-			vertexData.addElement(uv, VertexData.Semantic.TEXCOORD, 2);
-
-			// The triangles (three vertex indices for each triangle)
+			// A house
+			float vertices[] = {-4,-4,4, 4,-4,4, 4,4,4, -4,4,4,		// front face
+								-4,-4,-4, -4,-4,4, -4,4,4, -4,4,-4, // left face
+								4,-4,-4,-4,-4,-4, -4,4,-4, 4,4,-4,  // back face
+								4,-4,4, 4,-4,-4, 4,4,-4, 4,4,4,		// right face
+								4,4,4, 4,4,-4, -4,4,-4, -4,4,4,		// top face
+								-4,-4,4, -4,-4,-4, 4,-4,-4, 4,-4,4, // bottom face
+		
+								-20,-4,20, 20,-4,20, 20,-4,-20, -20,-4,-20, // ground floor
+								-4,4,4, 4,4,4, 0,8,4,				// the roof
+								4,4,4, 4,4,-4, 0,8,-4, 0,8,4,
+								-4,4,4, 0,8,4, 0,8,-4, -4,4,-4,
+								4,4,-4, -4,4,-4, 0,8,-4};
+		
+			float normals[] = {0,0,1,  0,0,1,  0,0,1,  0,0,1,		// front face
+							   -1,0,0, -1,0,0, -1,0,0, -1,0,0,		// left face
+							   0,0,-1, 0,0,-1, 0,0,-1, 0,0,-1,		// back face
+							   1,0,0,  1,0,0,  1,0,0,  1,0,0,		// right face
+							   0,1,0,  0,1,0,  0,1,0,  0,1,0,		// top face
+							   0,-1,0, 0,-1,0, 0,-1,0, 0,-1,0,		// bottom face
+		
+							   0,1,0,  0,1,0,  0,1,0,  0,1,0,		// ground floor
+							   0,0,1,  0,0,1,  0,0,1,				// front roof
+							   0.707f,0.707f,0, 0.707f,0.707f,0, 0.707f,0.707f,0, 0.707f,0.707f,0, // right roof
+							   -0.707f,0.707f,0, -0.707f,0.707f,0, -0.707f,0.707f,0, -0.707f,0.707f,0, // left roof
+							   0,0,-1, 0,0,-1, 0,0,-1};				// back roof
+							   
+			float colors[] = {1,0,0, 1,0,0, 1,0,0, 1,0,0,
+							  0,1,0, 0,1,0, 0,1,0, 0,1,0,
+							  1,0,0, 1,0,0, 1,0,0, 1,0,0,
+							  0,1,0, 0,1,0, 0,1,0, 0,1,0,
+							  0,0,1, 0,0,1, 0,0,1, 0,0,1,
+							  0,0,1, 0,0,1, 0,0,1, 0,0,1,
+			
+							  0,0.5f,0, 0,0.5f,0, 0,0.5f,0, 0,0.5f,0,			// ground floor
+							  0,0,1, 0,0,1, 0,0,1,							// roof
+							  1,0,0, 1,0,0, 1,0,0, 1,0,0,
+							  0,1,0, 0,1,0, 0,1,0, 0,1,0,
+							  0,0,1, 0,0,1, 0,0,1,};
+		
+			// Set up the vertex data
+			VertexData vertexData = renderContext.makeVertexData(42);
+		
+			// Specify the elements of the vertex data:
+			// - one element for vertex positions
+			vertexData.addElement(vertices, VertexData.Semantic.POSITION, 3);
+			// - one element for vertex colors
+			vertexData.addElement(colors, VertexData.Semantic.COLOR, 3);
+			// - one element for vertex normals
+			vertexData.addElement(normals, VertexData.Semantic.NORMAL, 3);
+			
+			// The index data that stores the connectivity of the triangles
 			int indices[] = {0,2,3, 0,1,2,			// front face
-					4,6,7, 4,5,6,			// left face
-					8,10,11, 8,9,10,		// back face
-					12,14,15, 12,13,14,	// right face
-					16,18,19, 16,17,18,	// top face
-					20,22,23, 20,21,22};	// bottom face
-
+						 	4,6,7, 4,5,6,			// left face
+						 	8,10,11, 8,9,10,		// back face
+						 	12,14,15, 12,13,14,	// right face
+							16,18,19, 16,17,18,	// top face
+							20,22,23, 20,21,22,	// bottom face
+				                
+							24,26,27, 24,25,26,	// ground floor
+							28,29,30,				// roof
+							31,33,34, 31,32,33,
+							35,37,38, 35,36,37,
+							39,40,41};	
+			
 			vertexData.addIndices(indices);
 			return vertexData;
 		}
@@ -184,7 +202,7 @@ public class trackball
 				else
 					v1PrePoint = v1Point;
 				
-				v1 = prtOnSphere(v1Point);
+				v1 = pointLocation(v1Point);
 				/*
 	    		v1PosZ = 1-v1PosX*v1PosX-v1PosY*v1PosY;
 	    		if(v1PosZ <= 0)
@@ -215,7 +233,7 @@ public class trackball
 				else
 					v2PrePoint = v2Point;
 				
-				v2 = prtOnSphere(v2Point);
+				v2 = pointLocation(v2Point);
 				/*
 				Point point = renderPanel.getCanvas().getMousePosition();
 				float v2PosX = (float)point.getX();
@@ -230,56 +248,81 @@ public class trackball
 	    		*/
 			}
 			
-			// rotation between the points
-			if(!v1.equals(v2))
-			{
-				Vector3f axis = new Vector3f(), rt = new Vector3f();;
-				double theta;
-				Quat4f delta = new Quat4f(), q = new Quat4f();
-				Matrix3f r = new Matrix3f();
-
-				System.out.println("axis v1PrePoint"+v1PrePoint.getX()+","+v1PrePoint.getY());
-				System.out.println("axis v2PrePoint"+v2PrePoint.getX()+","+v2PrePoint.getY());
-				axis.cross(v1, v2);
-				System.out.println("axis"+axis.x+","+axis.y+","+axis.z);
-				theta = v1.angle(v2);
-				delta.set(new AxisAngle4f(axis.x, axis.y, axis.z, (float)theta));
+			// rotation between the points#
+			Matrix4f t = new Matrix4f(teapot.getTransformation());
+			Matrix4f rotZ = new Matrix4f();
+			if(outSide==false){
+//				System.out.println("inside the circle");
+				if(!v1.equals(v2))
+				{
+					Vector3f axis = new Vector3f(), rt = new Vector3f();;
+					double theta;
+					Quat4f delta = new Quat4f(), q = new Quat4f();
+					Matrix3f r = new Matrix3f();
 				
-				// get shape transformation
-				Matrix4f t = new Matrix4f(teapot.getTransformation());
-				t.get(rt);
-				t.get(r);
-				q.set(r);
-				delta.mul(q);
-				t.set(delta,rt,1);
-				teapot.setTransformation(t);
+					System.out.println("axis v1PrePoint"+v1PrePoint.getX()+","+v1PrePoint.getY());
+					System.out.println("axis v2PrePoint"+v2PrePoint.getX()+","+v2PrePoint.getY());
+					axis.cross(v1, v2);
+					System.out.println("axis"+axis.x+","+axis.y+","+axis.z);
+					theta = v1.angle(v2);
+					delta.set(new AxisAngle4f(axis.x, axis.y, axis.z, (float)theta));
+				
+					// get shape transformation
+					t.get(rt);
+					t.get(r);
+					q.set(r);
+					delta.mul(q);
+					t.set(delta,rt,1);
+					teapot.setTransformation(t);
+				}
 			}
+			else{
+				System.out.println("outside the circle");
+				if(mouseIsPressed){
+					rotZ.rotZ(currentstep);
+					teapot.setTransformation(t);
+					System.out.println("rotate around z axie");
+				}
+			}
+			
 			renderPanel.getCanvas().repaint();
 		}
 		
-		////////////
-		//need adaptation !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		private Vector3f prtOnSphere(Point point)
+
+		private Vector3f pointLocation(Point point)
 		{
-			int height = renderPanel.getCanvas().getHeight();
-			int width = renderPanel.getCanvas().getWidth();
-			double r = (double) Math.min(height, width);
+//			int height = renderPanel.getCanvas().getHeight();
+//			int width = renderPanel.getCanvas().getWidth();
+//			double r = (double) Math.min(height, width)/2;
 
-			double x = point.getX()- width/2;
-			double y = height/2 - point.getY();
+			int length;
+			double x, y, z_sqre, z;
+			
+			length = renderPanel.getCanvas().getWidth();
+			x = point.getX()- length/2;
+			y = length/2 - point.getY();
 
-			x = x*2/r;
-			y = y*2/r;
+			// normalize to 1
+			x = x*2/length;
+			y = y*2/length;
 
-			if(Math.abs(x) > 1 || Math.abs(y)>1)
-				return null;
+//			if(Math.abs(x) > 1 || Math.abs(y)>1)
+//				return null;
 
-			double det = 1 - x*x - y*y;
+			z_sqre = 1 - x*x - y*y;
+			System.out.println("x="+x+",y="+y+",z_sqre="+z_sqre);
 
-			if(det <= 0)
-				return null;
-
-			double z = Math.sqrt(det);
+			if(z_sqre < 0){
+				z = 0;
+				outSide = true;
+				System.out.println("z= "+ z_sqre);
+			}
+			else{
+				z = Math.sqrt(z_sqre);
+				System.out.println("z= "+ z_sqre);
+				outSide = false;
+			}
+			
 
 			Vector3f v = new Vector3f((float) x, (float) y, (float) z);
 			v.normalize();
