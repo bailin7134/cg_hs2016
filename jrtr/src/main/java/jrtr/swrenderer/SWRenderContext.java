@@ -7,10 +7,14 @@ import jrtr.SceneManagerIterator;
 import jrtr.Shader;
 import jrtr.Texture;
 import jrtr.VertexData;
+import jrtr.VertexData.VertexElement;
 import jrtr.glrenderer.GLRenderPanel;
 
 import java.awt.image.*;
+import java.util.LinkedList;
 
+import javax.vecmath.*;
+import java.util.ListIterator;
 
 /**
  * A skeleton for a software renderer. It works in combination with
@@ -24,6 +28,10 @@ public class SWRenderContext implements RenderContext {
 
 	private SceneManagerInterface sceneManager;
 	private BufferedImage colorBuffer;
+	private Matrix4f obj2World;		// object to world matrix
+	private Matrix4f camerInv;		// inverse camera matrix
+	private Matrix4f viewPnt;		// viewpoint matrix
+	private Matrix4f proj;			// projection matrix
 		
 	public void setSceneManager(SceneManagerInterface sceneManager)
 	{
@@ -65,6 +73,9 @@ public class SWRenderContext implements RenderContext {
 	public void setViewportSize(int width, int height)
 	{
 		colorBuffer = new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR);
+		// viewport matrix from project
+		// x1-x0 = width, y1-y0 = height
+		viewPnt = new Matrix4f(width/2,0,0,width/2,  0,-height/2,0,height/2,  0,0,0.5f,0.5f,  0,0,0,1);
 	}
 		
 	/**
@@ -72,6 +83,9 @@ public class SWRenderContext implements RenderContext {
 	 */
 	private void beginFrame()
 	{
+		camerInv = new Matrix4f(sceneManager.getCamera().getCameraMatrix());
+		proj = new Matrix4f(sceneManager.getFrustum().getProjectionMatrix());
+		colorBuffer = new BufferedImage(colorBuffer.getWidth(), colorBuffer.getHeight(), BufferedImage.TYPE_3BYTE_BGR);
 	}
 	
 	private void endFrame()
@@ -84,6 +98,54 @@ public class SWRenderContext implements RenderContext {
 	 */
 	private void draw(RenderItem renderItem)
 	{
+		// get vertex data
+		VertexData vertexData = renderItem.getShape().getVertexData();
+		// get indices from vertex
+		int indices[] = vertexData.getIndices();
+		LinkedList<VertexElement> vertexElements = vertexData.getElements();
+		
+		// p' transformation
+		// 1. get object to world matrix
+		obj2World = renderItem.getShape().getTransformation();
+		// p'=DPC^{-1}Mp
+		// trans = DPC^{-1}M
+		// M.mul(N) = M*N;
+		Matrix4f trans = new Matrix4f(viewPnt);
+		trans.mul(proj);
+		trans.mul(camerInv);
+		trans.mul(obj2World);
+	
+		// get the information of POSITION, COLOR, NORMAL and TEXTCOORD
+		for(int num=0; num<vertexElements.size(); num++)
+		{
+			switch (vertexElements.get(num).getSemantic()){
+			case POSITION:
+				float[] pntArray = vertexElements.get(num).getData();
+				for(int i=0; i<pntArray.length/3; i++){
+					Vector4f pnt = new Vector4f(pntArray[i*3], pntArray[i*3+1], pntArray[i*3+2], 1);
+					// transform to p'
+					trans.transform(pnt);
+					// projection
+					int xNew = (int)(pnt.x/pnt.w);
+					int yNew = (int)(pnt.y/pnt.w);
+					// check the point in canvas or not
+					if(xNew<0 || yNew<0 || xNew>=colorBuffer.getWidth() || yNew>=colorBuffer.getWidth())
+						continue;
+					// set the color into white
+					int rgb = 0xFFFFFFFF;
+					colorBuffer.setRGB(xNew, yNew, rgb);
+				}
+				break;
+			case COLOR:
+				break;
+			case NORMAL:
+				break;
+			case TEXCOORD:
+				break;
+			default:
+				break;
+			}
+		}
 	}
 	
 	/**
