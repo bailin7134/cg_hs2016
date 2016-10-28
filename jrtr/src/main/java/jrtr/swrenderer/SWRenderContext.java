@@ -10,6 +10,7 @@ import jrtr.VertexData;
 import jrtr.VertexData.VertexElement;
 import jrtr.glrenderer.GLRenderPanel;
 
+import java.awt.Color;
 import java.awt.image.*;
 import java.util.LinkedList;
 
@@ -32,6 +33,7 @@ public class SWRenderContext implements RenderContext {
 	private Matrix4f camerInv;		// inverse camera matrix, invert later
 	private Matrix4f viewPnt;		// viewpoint matrix
 	private Matrix4f proj;			// projection matrix
+	private float[][] zBuffer;
 		
 	public void setSceneManager(SceneManagerInterface sceneManager)
 	{
@@ -51,7 +53,7 @@ public class SWRenderContext implements RenderContext {
 		SceneManagerIterator iterator = sceneManager.iterator();	
 		while(iterator.hasNext())
 		{
-			draw(iterator.next());
+			draw2(iterator.next());
 		}		
 		
 		endFrame();
@@ -85,6 +87,7 @@ public class SWRenderContext implements RenderContext {
 	{
 		camerInv = new Matrix4f(sceneManager.getCamera().getCameraMatrix());
 		proj = new Matrix4f(sceneManager.getFrustum().getProjectionMatrix());
+		zBuffer = new float[colorBuffer.getWidth()][colorBuffer.getHeight()];
 		colorBuffer = new BufferedImage(colorBuffer.getWidth(), colorBuffer.getHeight(), BufferedImage.TYPE_3BYTE_BGR);
 	}
 	
@@ -121,7 +124,8 @@ public class SWRenderContext implements RenderContext {
 			switch (vertexElements.get(num).getSemantic()){
 			case POSITION:
 				float[] pntArray = vertexElements.get(num).getData();
-				for(int i=0; i<pntArray.length/3; i++){
+				for(int i=0; i<pntArray.length/3; i++)
+				{
 					Vector4f pnt = new Vector4f(pntArray[i*3], pntArray[i*3+1], pntArray[i*3+2], 1);
 					// transform to p'
 					trans.transform(pnt);
@@ -178,20 +182,19 @@ public class SWRenderContext implements RenderContext {
 		{
 			int i = indices[j];
 			// Loop over all attributes of current vertex
-			ListIterator<VertexData.VertexElement> itr =
-			vertexElements.listIterator(0);
+			ListIterator<VertexData.VertexElement> itr = vertexElements.listIterator(0);
 			while(itr.hasNext())
 			{
 				VertexData.VertexElement e = itr.next();
 				if(e.getSemantic() == VertexData.Semantic.POSITION)
 				{
-					Vector4f p = new Vector4f
-					(e.getData()[i*3],e.getData()[i*3+1],e.getData()[i*3+2],1);
+					Vector4f p = new Vector4f(e.getData()[i*3],e.getData()[i*3+1],e.getData()[i*3+2],1);
 					t.transform(p);  // transform into 2D homogeneous coordinate
 					positions[k][0] = p.x;
 					positions[k][1] = p.y;
 					positions[k][2] = p.z;
 					positions[k][3] = p.w;
+					plotPoint(p);
 					k++;
 				}
 				else if(e.getSemantic() == VertexData.Semantic.COLOR)
@@ -224,11 +227,19 @@ public class SWRenderContext implements RenderContext {
 		}
 	}
 	
+	private void plotPoint(Vector4f p)
+	{
+		// projection
+		int xNew = (int)(p.x/p.w);
+		int yNew = (int)(p.y/p.w);
+		// set the color into white
+		int rgb = 0xFFFFFFFF;
+		if(xNew>=0 && xNew<colorBuffer.getWidth() && yNew>=0 && yNew<colorBuffer.getWidth())
+			colorBuffer.setRGB(xNew, yNew, rgb);
+	}
+	
 	private void rasterizeTriangle(float[][]positions, float[][]colors, float[][]normals, float[][]texcoords, RenderItem renderItem)
 	{
-		if (!(positions[0][3]<0 && positions[1][3]<0 && positions[2][3]<0))
-			System.out.println("Point is out of scope!");
-		
 		// calculate edge function
 		Matrix3f edgeFunction = new Matrix3f(
 				//x				 y				  w
@@ -236,41 +247,55 @@ public class SWRenderContext implements RenderContext {
 				positions[1][0], positions[1][1], positions[1][3],
 				positions[2][0], positions[2][1], positions[2][3]);
 		edgeFunction.invert();
+		edgeFunction.transpose();
 		
-		// times given matrix coordinate
-		Vector3f vecX = new Vector3f(texcoords[0][0],texcoords[1][0],texcoords[2][0]);
-		Vector3f vecY = new Vector3f(texcoords[0][1],texcoords[1][1],texcoords[2][1]);
-		Vector3f vec1 = new Vector3f(1,1,1);
-		edgeFunction.transform(vecX);
-		edgeFunction.transform(vecY);
-		edgeFunction.transform(vec1);
-		
-		System.out.println(edgeFunction);
-		/*
-		// check the point is visible and behind eye or not
-		int[] boundry;
-		if(positions[0][3]<0 && positions[1][3]<0 && positions[2][3]<0)
-			boundry = rect(positions);
-		else
-			boundry = new int[] {0, colorBuffer.getWidth(), 0, colorBuffer.getHeight()};
+		Vector3f arrayW = new Vector3f(1,1,1);
 
-		for(int x = boundry[0]; x<boundry[1]; x++){
-			for(int y = boundry[2]; y<boundry[3]; y++){
-				Vector3f p = new Vector3f(x,y,1);
-				float w = vec1.dot(p);	// actually 1/w
-				edgeFunction.transform(p);
-				if(p.x<0 || p.y<0 || p.z<0)
-					continue;
-				if(w>zBuffer[x][y]) {
-					zBuffer[x][y] = w;
-					if(renderItem.getShape().getMaterial() == null)
-						useColors(x,y,w,p,colors);
-					else
-						useTexture(x,y,w,vecX,vecY, (SWTexture) renderItem.getShape().getMaterial().diffuseMap);
+		// calculate the boundary rectangle
+		int endX=(int)Math.max((int)Math.max(positions[0][0]/positions[0][3], positions[1][0]/positions[1][3]), positions[2][0]/positions[2][3]);
+		int endY=(int)Math.max((int)Math.max(positions[0][1]/positions[0][3], positions[1][1]/positions[1][3]), positions[2][1]/positions[2][3]);
+		
+		int startX=(int)Math.min((int)Math.min(positions[0][0]/positions[0][3], positions[1][0]/positions[1][3]), positions[2][0]/positions[2][3]);
+		int startY=(int)Math.min((int)Math.min(positions[0][1]/positions[0][3], positions[1][1]/positions[1][3]), positions[2][1]/positions[2][3]);
+
+		for(int x=startX; x<=endX; x++)
+			for(int y=startY; y<=endY; y++)
+			{
+				Vector3f pnt = new Vector3f(x,y,1);
+				// calculate alpha beta gamma
+				edgeFunction.transform(pnt);
+				// calculate z-buffer
+				float w_recp = arrayW.dot(pnt);
+				// check whether point is in
+				if(pnt.x>=0 && pnt.y>=0 && pnt.z>=0)
+				{
+					// inside
+					if(w_recp>zBuffer[x][y])
+					{
+						zBuffer[x][y] = w_recp;
+//						colorCalc();
+						int rgb = 0xFFFFFFFF;
+						colorBuffer.setRGB(x,y,rgb);
+					}
 				}
+				else
+					continue;
 			}
-		}
-		*/
+	}
+	
+	private void colorCalc(Vector3f pnt, float w_recp, float [][] colors)
+	{
+		float r = (colors[0][0]*pnt.x+colors[1][0]*pnt.y+colors[2][0]*pnt.z)/w_recp;
+		if(r>1)
+			r = 1;
+		float g = (colors[0][1]*pnt.x+colors[1][1]*pnt.y+colors[2][1]*pnt.z)/w_recp;
+		if(g>1)
+			g = 1;
+		float b = (colors[0][2]*pnt.x+colors[1][2]*pnt.y+colors[2][2]*pnt.z)/w_recp;
+		if(b>1)
+			b = 1;
+		Color c = new Color(r,g,b);
+//		colorBuffer.setRGB(pnt.x, pnt.y, c.getRGB());
 	}
 	
 	/**
