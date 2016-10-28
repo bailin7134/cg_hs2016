@@ -29,7 +29,7 @@ public class SWRenderContext implements RenderContext {
 	private SceneManagerInterface sceneManager;
 	private BufferedImage colorBuffer;
 	private Matrix4f obj2World;		// object to world matrix
-	private Matrix4f camerInv;		// inverse camera matrix
+	private Matrix4f camerInv;		// inverse camera matrix, invert later
 	private Matrix4f viewPnt;		// viewpoint matrix
 	private Matrix4f proj;			// projection matrix
 		
@@ -146,6 +146,131 @@ public class SWRenderContext implements RenderContext {
 				break;
 			}
 		}
+	}
+	
+	private void draw2(RenderItem renderItem)
+	{
+		// Variable declarations
+		VertexData vertexData = renderItem.getShape().getVertexData();
+		LinkedList<VertexData.VertexElement> vertexElements = vertexData.getElements();
+		int indices[] = vertexData.getIndices();
+		float[][] positions = new float[3][4];
+		float[][] colors = new float[3][3];
+		float[][] normals = new float[3][3];
+		float[][] texcoords = new float[3][2];
+		Matrix4f t = new Matrix4f(viewPnt);
+		
+		// p' transformation
+		// 1. get object to world matrix
+		obj2World = renderItem.getShape().getTransformation();
+		// p'=DPC^{-1}Mp
+		// trans = DPC^{-1}M
+		// M.mul(N) = M*N;
+		t.mul(proj);
+		camerInv.invert();
+		t.mul(camerInv);
+		t.mul(obj2World);
+		
+		// Skeleton code to assemble triangle data
+		int k = 0; // index of triangle vertex, k is 0,1, or 2
+		// Loop over all vertex indices
+		for(int j=0; j<indices.length; j++)
+		{
+			int i = indices[j];
+			// Loop over all attributes of current vertex
+			ListIterator<VertexData.VertexElement> itr =
+			vertexElements.listIterator(0);
+			while(itr.hasNext())
+			{
+				VertexData.VertexElement e = itr.next();
+				if(e.getSemantic() == VertexData.Semantic.POSITION)
+				{
+					Vector4f p = new Vector4f
+					(e.getData()[i*3],e.getData()[i*3+1],e.getData()[i*3+2],1);
+					t.transform(p);  // transform into 2D homogeneous coordinate
+					positions[k][0] = p.x;
+					positions[k][1] = p.y;
+					positions[k][2] = p.z;
+					positions[k][3] = p.w;
+					k++;
+				}
+				else if(e.getSemantic() == VertexData.Semantic.COLOR)
+				{
+					// you need to collect other vertex attributes (colors, normals) too
+					colors[k][0] = e.getData()[i*3];
+					colors[k][1] = e.getData()[i*3+1];
+					colors[k][2] = e.getData()[i*3+2];
+				}
+				else if(e.getSemantic() == VertexData.Semantic.NORMAL)
+				{
+					normals[k][0] = e.getData()[i*3];
+					normals[k][1] = e.getData()[i*3+1];
+					normals[k][2] = e.getData()[i*3+2];
+				}
+				else if(e.getSemantic() == VertexData.Semantic.TEXCOORD)
+				{
+					texcoords[k][0] = e.getData()[i*2];
+					texcoords[k][1] = e.getData()[i*2+1];
+				}
+				
+				// Draw triangle as soon as we collected the data for 3 vertices
+				if(k == 3)
+				{
+					// Draw the triangle with the collected three vertex positions, etc.
+					rasterizeTriangle(positions, colors, normals, texcoords, renderItem);
+					k = 0;
+				}
+			}
+		}
+	}
+	
+	private void rasterizeTriangle(float[][]positions, float[][]colors, float[][]normals, float[][]texcoords, RenderItem renderItem)
+	{
+		if (!(positions[0][3]<0 && positions[1][3]<0 && positions[2][3]<0))
+			System.out.println("Point is out of scope!");
+		
+		// calculate edge function
+		Matrix3f edgeFunction = new Matrix3f(
+				//x				 y				  w
+				positions[0][0], positions[0][1], positions[0][3],
+				positions[1][0], positions[1][1], positions[1][3],
+				positions[2][0], positions[2][1], positions[2][3]);
+		edgeFunction.invert();
+		
+		// times given matrix coordinate
+		Vector3f vecX = new Vector3f(texcoords[0][0],texcoords[1][0],texcoords[2][0]);
+		Vector3f vecY = new Vector3f(texcoords[0][1],texcoords[1][1],texcoords[2][1]);
+		Vector3f vec1 = new Vector3f(1,1,1);
+		edgeFunction.transform(vecX);
+		edgeFunction.transform(vecY);
+		edgeFunction.transform(vec1);
+		
+		System.out.println(edgeFunction);
+		/*
+		// check the point is visible and behind eye or not
+		int[] boundry;
+		if(positions[0][3]<0 && positions[1][3]<0 && positions[2][3]<0)
+			boundry = rect(positions);
+		else
+			boundry = new int[] {0, colorBuffer.getWidth(), 0, colorBuffer.getHeight()};
+
+		for(int x = boundry[0]; x<boundry[1]; x++){
+			for(int y = boundry[2]; y<boundry[3]; y++){
+				Vector3f p = new Vector3f(x,y,1);
+				float w = vec1.dot(p);	// actually 1/w
+				edgeFunction.transform(p);
+				if(p.x<0 || p.y<0 || p.z<0)
+					continue;
+				if(w>zBuffer[x][y]) {
+					zBuffer[x][y] = w;
+					if(renderItem.getShape().getMaterial() == null)
+						useColors(x,y,w,p,colors);
+					else
+						useTexture(x,y,w,vecX,vecY, (SWTexture) renderItem.getShape().getMaterial().diffuseMap);
+				}
+			}
+		}
+		*/
 	}
 	
 	/**
