@@ -263,50 +263,6 @@ public class SWRenderContext implements RenderContext {
 		colorBuffer.setRGB(x, y, c.getRGB());
 	}
 
-	private void rasterizeTriangle2(float[][]positions, float[][]colors, float[][]normals, float[][]texcoords, RenderItem renderItem)
-	{
-		// calculate edge function
-		Matrix3f edgeFunction = new Matrix3f(
-				//x				 y				  w
-				positions[0][0], positions[0][1], positions[0][3],
-				positions[1][0], positions[1][1], positions[1][3],
-				positions[2][0], positions[2][1], positions[2][3]);
-		edgeFunction.invert();
-		Vector3f intepW = new Vector3f(1,1,1);
-		edgeFunction.transform(intepW);
-		edgeFunction.transpose();
-		System.out.println("edgeFunction:"+edgeFunction);
-		
-		int endX = Math.round(Math.max((int)Math.max(positions[0][0]/positions[0][3], positions[1][0]/positions[1][3]), positions[2][0]/positions[2][3]));
-		int endY = Math.round(Math.max((int)Math.max(positions[0][1]/positions[0][3], positions[1][1]/positions[1][3]), positions[2][1]/positions[2][3]));
-		int startX = Math.round(Math.min((int)Math.min(positions[0][0]/positions[0][3], positions[1][0]/positions[1][3]), positions[2][0]/positions[2][3]));
-		int startY = Math.round(Math.min((int)Math.min(positions[0][1]/positions[0][3], positions[1][1]/positions[1][3]), positions[2][1]/positions[2][3]));
-
-		for(int x=startX; x<=endX; x++)
-		{
-			for(int y=startY; y<=endY; y++)
-			{
-				Vector3f pnt = new Vector3f(x,y,1);
-				// calculate alpha beta gamma
-				edgeFunction.transform(pnt);
-				if(x==startX || y==startY)
-					System.out.println("("+x+","+y+")"+"edgeFunction:"+pnt);
-				// calculate z-buffer
-				float w_recp = 0;//???????????
-				// check whether point is in
-				if(pnt.x>=0 && pnt.y>=0 && pnt.z>=0)
-				{
-					// inside
-					if(w_recp>zBuffer[x][y])
-					{
-						zBuffer[x][y] = w_recp;
-						int rgb = 0xFFFFFFFF;
-						colorBuffer.setRGB(x, colorBuffer.getHeight() - y - 1, rgb);
-					}
-				}
-			}
-		}
-	}
 	/**
 	 * Does nothing. We will not implement shaders for the software renderer.
 	 */
