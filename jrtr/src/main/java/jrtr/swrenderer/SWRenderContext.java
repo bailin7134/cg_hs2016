@@ -118,9 +118,13 @@ public class SWRenderContext implements RenderContext {
 		// trans = DPC^{-1}M
 		// M.mul(N) = M*N;
 		t.mul(proj);
-		camerInv.invert();
+//		camerInv.invert();
 		t.mul(camerInv);
 		t.mul(obj2World);
+//		System.out.println(viewPnt);
+//		System.out.println(proj);
+//		System.out.println(camerInv);
+//		System.out.println(obj2World);
 		
 		// Skeleton code to assemble triangle data
 		int k = 0; // index of triangle vertex, k is 0,1, or 2
@@ -169,6 +173,7 @@ public class SWRenderContext implements RenderContext {
 				if(k == 3)
 				{
 					// Draw the triangle with the collected three vertex positions, etc.
+					// check whether point is behind eye
 					rasterizeTriangle(positions, colors, normals, texcoords, renderItem);
 					k = 0;
 				}
@@ -183,7 +188,7 @@ public class SWRenderContext implements RenderContext {
 		int yNew = (int)(point.y/point.w);
 //		System.out.println(xNew+","+yNew);
 		// check the point in canvas or not
-		if(xNew>=0 && xNew<colorBuffer.getWidth() && yNew>=0 && yNew<colorBuffer.getWidth())
+		if(xNew>=0 && xNew<colorBuffer.getWidth() && yNew>=0 && yNew<colorBuffer.getHeight())
 		{
 			// set the color into white
 			int rgb = 0xFFFFFFFF;
@@ -192,7 +197,73 @@ public class SWRenderContext implements RenderContext {
 		// System.out.println(p);
 	}
 
-	private void rasterizeTriangle(float[][]positions, float[][]colors, float[][]normals, float[][]texcoords, RenderItem renderItem)
+	private void rasterizeTriangle(float[][] positions,float[][] colors,float[][] normals,float[][] texcoords,RenderItem renderItem){	
+		Matrix3f edgeFunction = new Matrix3f(
+				positions[0][0], positions[0][1], positions[0][3],
+				positions[1][0], positions[1][1], positions[1][3],
+				positions[2][0], positions[2][1], positions[2][3]);
+
+		edgeFunction.invert();
+		Vector3f intepW = new Vector3f(1,1,1);
+		edgeFunction.transform(intepW);
+		edgeFunction.transpose();
+
+		int startX, startY, endX, endY;
+		endX = Math.round(Math.max((int)Math.max(positions[0][0]/positions[0][3], positions[1][0]/positions[1][3]), positions[2][0]/positions[2][3]));
+		endY = Math.round(Math.max((int)Math.max(positions[0][1]/positions[0][3], positions[1][1]/positions[1][3]), positions[2][1]/positions[2][3]));
+		startX = Math.round(Math.min((int)Math.min(positions[0][0]/positions[0][3], positions[1][0]/positions[1][3]), positions[2][0]/positions[2][3]));
+		startY = Math.round(Math.min((int)Math.min(positions[0][1]/positions[0][3], positions[1][1]/positions[1][3]), positions[2][1]/positions[2][3]));
+		
+		// boundary correction
+		if(startX<0)
+			startX = 0;
+		if(startY<0)
+			startY = 0;
+		if(endX>=colorBuffer.getWidth())
+			endX=colorBuffer.getWidth()-1;
+		if(endY>=colorBuffer.getHeight())
+			endY=colorBuffer.getHeight()-1;
+
+//		System.out.println(startX+","+endX+","+startY+","+endY);
+//		System.out.println(zBuffer.length);
+//		System.out.println(zBuffer[0].length);
+
+		for(int x=startX; x<=endX; x++)
+		{
+			for(int y=startY; y<=endY; y++)
+			{
+				Vector3f p = new Vector3f(x,y,1);
+				float w_recp = intepW.dot(p);
+				edgeFunction.transform(p);
+				if(p.x>=0 && p.y>=0 && p.z>=0){
+					if(w_recp>zBuffer[x][y])
+					{
+						zBuffer[x][y] = w_recp;
+						applyColor(x,y,w_recp,p,colors);
+					}
+				}
+			}
+		}
+	}
+
+	private void applyColor(int x, int y, float w, Vector3f p, float[][] colors){
+		float r, g, b;
+		
+		r = (colors[0][0]*p.x+colors[1][0]*p.y+colors[2][0]*p.z)/w;
+		g = (colors[0][1]*p.x+colors[1][1]*p.y+colors[2][1]*p.z)/w;
+		b = (colors[0][2]*p.x+colors[1][2]*p.y+colors[2][2]*p.z)/w;
+		
+		if(r>=1)
+			r = 1;
+		if(b>1)
+			b = 1;
+		if(g>1)
+			g = 1;
+		Color c = new Color(r,g,b);
+		colorBuffer.setRGB(x, y, c.getRGB());
+	}
+
+	private void rasterizeTriangle2(float[][]positions, float[][]colors, float[][]normals, float[][]texcoords, RenderItem renderItem)
 	{
 		// calculate edge function
 		Matrix3f edgeFunction = new Matrix3f(
@@ -201,112 +272,27 @@ public class SWRenderContext implements RenderContext {
 				positions[1][0], positions[1][1], positions[1][3],
 				positions[2][0], positions[2][1], positions[2][3]);
 		edgeFunction.invert();
+		Vector3f intepW = new Vector3f(1,1,1);
+		edgeFunction.transform(intepW);
 		edgeFunction.transpose();
 		System.out.println("edgeFunction:"+edgeFunction);
 		
-		Matrix3f edgF = new Matrix3f(	positions[0][0], positions[0][1], positions[0][3],
-				positions[1][0], positions[1][1], positions[1][3],
-				positions[2][0], positions[2][1], positions[2][3]
-				);
-		edgF.invert();
-		Vector3f ax = new Vector3f(texcoords[0][0],texcoords[1][0],texcoords[2][0]);
-		edgF.transform(ax);
-		Vector3f ay = new Vector3f(texcoords[0][1],texcoords[1][1],texcoords[2][1]);
-		edgF.transform(ay);
-		Vector3f a1 = new Vector3f(1,1,1);
-		edgF.transform(a1);
-		edgF.transpose();
-		System.out.println("edgF:"+edgF);
-//		System.out.println("ax:"+ax);
-//		System.out.println("ay:"+ay);
-//		System.out.println("a1:"+a1);
-		
-		
-//		int startX = 0, int  = 0, startY = 0, endY = 0;
-//		boundRect(positions, startX, endX, startY, endY);
-		int endX=(int)Math.max((int)Math.max(positions[0][0]/positions[0][3], positions[1][0]/positions[1][3]), positions[2][0]/positions[2][3]);
-		int endY=(int)Math.max((int)Math.max(positions[0][1]/positions[0][3], positions[1][1]/positions[1][3]), positions[2][1]/positions[2][3]);
-		
-		int startX=(int)Math.min((int)Math.min(positions[0][0]/positions[0][3], positions[1][0]/positions[1][3]), positions[2][0]/positions[2][3]);
-		int startY=(int)Math.min((int)Math.min(positions[0][1]/positions[0][3], positions[1][1]/positions[1][3]), positions[2][1]/positions[2][3]);
+		int endX = Math.round(Math.max((int)Math.max(positions[0][0]/positions[0][3], positions[1][0]/positions[1][3]), positions[2][0]/positions[2][3]));
+		int endY = Math.round(Math.max((int)Math.max(positions[0][1]/positions[0][3], positions[1][1]/positions[1][3]), positions[2][1]/positions[2][3]));
+		int startX = Math.round(Math.min((int)Math.min(positions[0][0]/positions[0][3], positions[1][0]/positions[1][3]), positions[2][0]/positions[2][3]));
+		int startY = Math.round(Math.min((int)Math.min(positions[0][1]/positions[0][3], positions[1][1]/positions[1][3]), positions[2][1]/positions[2][3]));
 
-		
-		Vector3f arrayW = new Vector3f(1/positions[0][3],1/positions[1][3],1/positions[2][3]);
-		
-
-		Matrix3f alphabetagamma = new Matrix3f();
-		 //start with smallest "possible" bounding rectangle
-		Point4f topLeft = new Point4f(500 - 1, 500 - 1,0,0);
-		Point4f botRight = new Point4f(0, 0,0,0);
-		float[] oneOverWarray = new float[3];
-		for (int i = 0; i < 3; i++) {
-			int x = (int) (positions[i][0]/positions[i][3]);
-			int y = (int) (positions[i][1]/positions[i][3]);
-			topLeft.x = (int) Math.min(topLeft.x, x);
-			topLeft.y = (int) Math.min(topLeft.y, y);
-			botRight.x = (int) Math.max(botRight.x, x);
-			botRight.y = (int) Math.max(botRight.y, y);
-			
-			float[] row = { positions[i][0], positions[i][1], positions[i][3] };
-			alphabetagamma.setRow(i, row);
-			oneOverWarray[i] = 1/positions[i][3];
-		}
-//		System.out.println("topLeft:"+topLeft+",botRight:"+botRight);
-		alphabetagamma.invert();
-//		System.out.println("alphabetagamma:"+alphabetagamma);
-		
-
-		topLeft.x = Math.max(0, topLeft.x);
-		topLeft.y = Math.max(0, topLeft.y);
-		botRight.x = Math.min(500 - 1, botRight.x);
-		botRight.y = Math.min(500 - 1, botRight.y);
-		//if the area is 0, make it not go trough the draw step at all
-		if (topLeft.x == botRight.x && topLeft.y == botRight.y) {
-			botRight.x = topLeft.x - 1;
-			botRight.y = topLeft.y - 1;
-		}
-		
-		// points
-//		System.out.println("point 1:"+positions[0][0]/positions[0][3]+","+positions[0][1]/positions[0][3]);
-//		System.out.println("point 2:"+positions[1][0]/positions[1][3]+","+positions[1][1]/positions[1][3]);
-//		System.out.println("point 3:"+positions[2][0]/positions[2][3]+","+positions[2][1]/positions[2][3]);
-//
-//
-//		Point3f pnt1 = new Point3f(280.1051f,193.78441f, 1);
-//		Point3f pnt2 = new Point3f(203.89488f,266.2156f, 1);
-//		Point3f pnt3 = new Point3f(280.1051f,266.2156f, 1);
-//		edgeFunction.transform(pnt1);
-//		edgeFunction.transform(pnt2);
-//		edgeFunction.transform(pnt3);
-//		System.out.println("edgeFunction 1:"+pnt1);
-//		System.out.println("edgeFunction 2:"+pnt2);
-//		System.out.println("edgeFunction 3:"+pnt3);
-
-		
-		int[] boundry;
-		if(positions[0][3]<0 && positions[1][3]<0 && positions[2][3]<0)
-			boundry = rect(positions);
-		else
-			boundry = new int[] {0, colorBuffer.getWidth(), 0, colorBuffer.getHeight()};
-		
 		for(int x=startX; x<=endX; x++)
 		{
 			for(int y=startY; y<=endY; y++)
-//		for(int x=0; x<colorBuffer.getWidth(); x++)
-//			for(int y=0; y<colorBuffer.getHeight(); y++)				
 			{
-				Vector3f vertexWeights = getVertexWeights(x, y, alphabetagamma);
-				if(x==279 && y==240)
-					System.out.println("("+x+","+y+")"+"vertexWeights:"+vertexWeights);
-				
 				Vector3f pnt = new Vector3f(x,y,1);
 				// calculate alpha beta gamma
 				edgeFunction.transform(pnt);
-				System.out.println("edgeFunction.transform"+pnt);
-				if(x==279 && y==240)
+				if(x==startX || y==startY)
 					System.out.println("("+x+","+y+")"+"edgeFunction:"+pnt);
 				// calculate z-buffer
-				float w_recp = arrayW.dot(pnt);
+				float w_recp = 0;//???????????
 				// check whether point is in
 				if(pnt.x>=0 && pnt.y>=0 && pnt.z>=0)
 				{
@@ -314,101 +300,13 @@ public class SWRenderContext implements RenderContext {
 					if(w_recp>zBuffer[x][y])
 					{
 						zBuffer[x][y] = w_recp;
-
-//						int c;
-//						if (renderItem.getShape().getMaterial() != null && renderItem.getShape().getMaterial().getTexture() != null)
-//							c = interpolateColorFromTexture(vertexWeights,texCoords, material.getTexture());
-//						else 
-//							c = interpolateColor(vertexWeights, colors).getRGB();
-						
 						int rgb = 0xFFFFFFFF;
-//						colorBuffer.setRGB(x,y,rgb);
 						colorBuffer.setRGB(x, colorBuffer.getHeight() - y - 1, rgb);
 					}
 				}
 			}
 		}
-
-		for(int x = boundry[0]; x<boundry[1]; x++){
-			for(int y = boundry[2]; y<boundry[3]; y++){
-				Vector3f p = new Vector3f(x,y,1);
-				float w = a1.dot(p);	// actually 1/w
-				edgF.transform(p);
-				System.out.println("edgF.transform"+p);
-				if(p.x<0 || p.y<0 || p.z<0)
-					continue;
-				if(w>zBuffer[x][y]) {
-					zBuffer[x][y] = w;
-					if(renderItem.getShape().getMaterial() == null)
-						;
-//						useColors(x,y,w,p,colors);
-//					else
-//						useTexture(x,y,w,ax,ay, (SWTexture) renderItem.getShape().getMaterial().diffuseMap);
-				}
-			}
-		}
 	}
-
-	private int[] rect(float[][] positions){
-		float[][] pos = {{positions[0][0]/positions[0][3], positions[1][0]/positions[1][3], positions[2][0]/positions[2][3]},
-				{positions[0][1]/positions[0][3], positions[1][1]/positions[1][3], positions[2][1]/positions[2][3]},
-		};
-		int xmin = Math.round(Math.min(Math.min(pos[0][0], pos[0][1]), pos[0][2]));
-		int xmax = Math.round(Math.max(Math.max(pos[0][0], pos[0][1]), pos[0][2]));
-		int ymin = Math.round(Math.min(Math.min(pos[1][0], pos[1][1]), pos[1][2]));
-		int ymax = Math.round(Math.max(Math.max(pos[1][0], pos[1][1]), pos[1][2]));
-
-		if(xmin < 0)
-			xmin = 0;
-		if(ymin < 0)
-			ymin = 0;
-		if(xmin > colorBuffer.getWidth())
-			xmin = colorBuffer.getWidth();
-		if(ymin > colorBuffer.getHeight())
-			ymin = colorBuffer.getHeight();
-
-		return new int[] {xmin, xmax, ymin, ymax};
-	}
-	
-	private Vector3f getVertexWeights(int x, int y, Matrix3f alphabetagamma) {
-		Vector3f abgVector = new Vector3f();
-		float[] coeffs = new float[3];
-		for (int i = 0; i < 3; i++) {
-			alphabetagamma.getColumn(i, abgVector);
-			float coeff = abgVector.dot(new Vector3f(x, y, 1));
-			if (coeff < 0)
-				return null;
-			else coeffs[i] = coeff;
-		}
-		return new Vector3f(coeffs);
-	}
-	
-	private void boundRect(float[][] positions, int startX, int endX, int startY, int endY)
-	{
-		// calculate the boundary rectangle
-		endX=(int)Math.max((int)Math.max(positions[0][0]/positions[0][3], positions[1][0]/positions[1][3]), positions[2][0]/positions[2][3]);
-		endY=(int)Math.max((int)Math.max(positions[0][1]/positions[0][3], positions[1][1]/positions[1][3]), positions[2][1]/positions[2][3]);
-		
-		startX=(int)Math.min((int)Math.min(positions[0][0]/positions[0][3], positions[1][0]/positions[1][3]), positions[2][0]/positions[2][3]);
-		startY=(int)Math.min((int)Math.min(positions[0][1]/positions[0][3], positions[1][1]/positions[1][3]), positions[2][1]/positions[2][3]);
-//		System.out.println("startX:"+startX+", endX:"+endX+", startY:"+startY+", endY:"+endY);
-	}
-	
-	private void colorCalc(Vector3f pnt, float w_recp, float [][] colors)
-	{
-		float r = (colors[0][0]*pnt.x+colors[1][0]*pnt.y+colors[2][0]*pnt.z)/w_recp;
-		if(r>1)
-			r = 1;
-		float g = (colors[0][1]*pnt.x+colors[1][1]*pnt.y+colors[2][1]*pnt.z)/w_recp;
-		if(g>1)
-			g = 1;
-		float b = (colors[0][2]*pnt.x+colors[1][2]*pnt.y+colors[2][2]*pnt.z)/w_recp;
-		if(b>1)
-			b = 1;
-		Color c = new Color(r,g,b);
-//		colorBuffer.setRGB(pnt.x, pnt.y, c.getRGB());
-	}
-	
 	/**
 	 * Does nothing. We will not implement shaders for the software renderer.
 	 */
