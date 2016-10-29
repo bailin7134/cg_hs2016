@@ -34,6 +34,7 @@ public class SWRenderContext implements RenderContext {
 	private Matrix4f viewPnt;		// viewpoint matrix
 	private Matrix4f proj;			// projection matrix
 	private float[][] zBuffer;
+	private static final boolean BILINEAR = false;
 		
 	public void setSceneManager(SceneManagerInterface sceneManager)
 	{
@@ -239,13 +240,45 @@ public class SWRenderContext implements RenderContext {
 					if(w_recp>zBuffer[x][y])
 					{
 						zBuffer[x][y] = w_recp;
-						applyColor(x,y,w_recp,p,colors);
+						
+						if(renderItem.getShape().getMaterial() == null)
+							applyColor(x,y,w_recp,p,colors);
+						else
+							applyColorTexture(p, texcoords, renderItem.getShape().getMaterial().getTexture());
+					
 					}
 				}
 			}
 		}
 	}
+	private int applyColorTexture(Vector3f edgeCoefficients, float[][] texCoords, Texture texture)
+	{
+		float[] resultingTexel = new float[2];
+		float[] coeffs = new float[3];
+		edgeCoefficients.get(coeffs);
+		for (int vectorNr = 0; vectorNr < 3; vectorNr++) {
+			resultingTexel[0] += coeffs[vectorNr]*texCoords[vectorNr][0];
+			resultingTexel[1] += coeffs[vectorNr]*texCoords[vectorNr][1];
+		}
+		float divisor = edgeCoefficients.x + edgeCoefficients.y + edgeCoefficients.z;
+		float x = resultingTexel[0]/divisor;
+		float y = resultingTexel[1]/divisor;
+		if (BILINEAR)
+			return ((SWTexture) texture).getBilinearInterpolatedColor(x,y);
+		else return ((SWTexture) texture).getNearestNeighbourColor(x, y);
+	}
 
+//	private void applyColorTexture(int x, int y, float w, Vector3f ax, Vector3f ay, SWTexture texture){
+//		float u = (ax.x*x+ax.y*y+ax.z)/w;
+//		float v = (ay.x*x+ay.y*y+ay.z)/w;
+//		u = (float) (Math.round(u*1000)/1000.);
+//		v = (float) (Math.round(v*1000)/1000.);
+//		if(nearestNeigbor)
+//			colorBuffer.setRGB(x, y, texture.getColorNN(u, v));
+//		else
+//			colorBuffer.setRGB(x, y, texture.getColorBL(u, v));
+//	}
+	
 	private void applyColor(int x, int y, float w, Vector3f p, float[][] colors){
 		float r, g, b;
 		

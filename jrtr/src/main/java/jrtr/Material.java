@@ -28,4 +28,9 @@ public class Material {
 		alphaMap = null;
 		shader = null;
 	}
+
+	public Texture getTexture() {
+		// TODO Auto-generated method stub
+		return diffuseMap;
+	}
 }
