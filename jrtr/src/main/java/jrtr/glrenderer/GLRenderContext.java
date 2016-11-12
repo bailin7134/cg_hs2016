@@ -270,10 +270,24 @@ public class GLRenderContext implements RenderContext {
 		gl.glUniformMatrix4fv(
 				gl.glGetUniformLocation(activeShaderID, "modelview"), 1, false,
 				transformationToFloat16(modelview), 0);
-		gl.glUniformMatrix4fv(gl.glGetUniformLocation(activeShaderID,
-				"projection"), 1, false, transformationToFloat16(sceneManager
-				.getFrustum().getProjectionMatrix()), 0);
-
+		gl.glUniformMatrix4fv(
+				gl.glGetUniformLocation(activeShaderID, "projection"), 1, false, 
+				transformationToFloat16(sceneManager.getFrustum().getProjectionMatrix()), 0);
+		
+		gl.glUniformMatrix4fv(
+				gl.glGetUniformLocation(activeShaderID, "model"), 1, false, 
+				transformationToFloat16(transformation), 0);
+		
+		Matrix4f camera = new Matrix4f(sceneManager.getCamera().getCameraMatrix());
+		gl.glUniformMatrix4fv(
+				gl.glGetUniformLocation(activeShaderID, "view"), 1, false, 
+				transformationToFloat16(camera), 0);
+		
+		Vector4f camera_position = new Vector4f();
+		camera.getColumn(3, camera_position);
+		gl.glUniform4f(
+				gl.glGetUniformLocation(activeShaderID, "camera"), 
+				camera_position.x, camera_position.y, camera_position.z, 1.f);
 	}
 
 	/**
