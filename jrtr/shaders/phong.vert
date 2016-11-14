@@ -26,7 +26,6 @@ void main()
 	// Pass texture coordiantes to fragment shader, OpenGL automatically
 	// interpolates them to each pixel  (in a perspectively correct manner) 
 	frag_texcoord = texcoord;
-	
 	frag_position = model * position;
 	frag_normal = model * vec4(normal,0);
 
