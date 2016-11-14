@@ -101,14 +101,6 @@ public class simple
 			//
 			Light l = new Light();
 			
-//			l.diffuse = new Vector3f(0f,0f,1f);
-//			l.direction = new Vector3f(0f,0f,1f);
-//			sceneManager.addLight(l);
-//			l = new Light();
-//			l.diffuse = new Vector3f(1f,0f,0f);
-//			l.direction = new Vector3f(0f,1f,0f);
-//			sceneManager.addLight(l);
-//			l = new Light();
 			l.diffuse = new Vector3f(1f,1f,1f);
 			l.position = new Vector3f(0f,0f,-8.5f);
 			l.type = Light.Type.POINT;
@@ -118,11 +110,6 @@ public class simple
 			l.position = new Vector3f(-1f,-1f,-8.5f);
 			l.type = Light.Type.POINT;
 			sceneManager.addLight(l);
-//			l = new Light();
-//			l.position = new Vector3f(0.f,0.f,1.f);
-//			l.diffuse = new Vector3f(1.f,0.f,0.f);
-//			l.type = Light.Type.POINT;
-//			sceneManager.addLight(l);
 			
 			// Add the scene to the renderer
 			renderContext.setSceneManager(sceneManager);
@@ -156,19 +143,6 @@ public class simple
 				System.out.print(e.getMessage());
 			}
 			
-			// light source here
-//			Light lightSource1 = new Light();
-//			Light lightSource2 = new Light();
-//			lightSource1.type = Light.Type.POINT;
-//			lightSource1.direction = new Vector3f(0,0,-1);
-//			lightSource1.position = new Vector3f(0,0,1);
-//			lightSource1.diffuse = new Vector3f(1,0,0);
-//			lightSource2.type = Light.Type.POINT;
-			
-			// assign light source parameters
-			
-			
-
 			// Register a timer task
 		    Timer timer = new Timer();
 		    basicstep = 0.01f;
