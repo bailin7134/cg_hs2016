@@ -19,8 +19,6 @@ uniform mat4 modelview;	// for bump
 in vec2 frag_texcoord;
 in vec4 frag_position;
 in vec4 frag_normal;
-in vec4 frag_tangent;
-in vec4 frag_bitangent;
 
 // Output variable, will be written to framebuffer automatically
 out vec4 frag_shaded;
@@ -28,37 +26,24 @@ out vec4 frag_shaded;
 void main()
 {		
 
-	vec4 n = modelview * mat4(frag_tangent,frag_bitangent,frag_normal,vec4(0,0,0,0)) * texture(myNormalMap, frag_texcoord);
-	n = normalize(n);
-	n = frag_normal;
-
 	float r = 0;
-	vec3 c = vec3(0,0,0);
+	vec3 color = vec3(0,0,0);
+	vec3 lightColor;
+	
 	for(int i=0; i<nLights; i++){
 		
-		vec3 c_d = vec3(0,0,0);
 		vec4 L = vec4(0,0,0,0);
-	
-		// directional light source (default light source):
-		if(lightType[i]==0){
-			c_d = c_diffuse[i];
-			L = lightDirection[i];
-		}
-	
-		// point light source:
-		if(lightType[i]==1){
-			L = lightPosition[i]-frag_position;
-			r = length(L);	// distance to light source
-			L = L/r;
-			c_d = c_diffuse[i]/(r*r);		
-		}
+		vec4 n = frag_normal;
 		
-		c = c + c_d*k_diffuse*(max(dot(L,n),0));
+		// point light source:
+		L = lightPosition[i]-frag_position;
+		r = length(L);	// distance to light source
+		lightColor = c_diffuse[i]/(r*r);
+		
+		//The Cg Tutorial
+		color += lightColor*k_diffuse*(max(dot(L,n),0));
 	}
  
 	// The built-in GLSL function "texture" performs the texture lookup
-	frag_shaded = vec4(c,1) * texture(myTexture, frag_texcoord);
-	//frag_shaded = texture(myTexture, frag_texcoord);
-	//frag_shaded = texture(myNormalMap, frag_texcoord);
-	
+	frag_shaded = vec4(color,1) * texture(myTexture, frag_texcoord);
 }
