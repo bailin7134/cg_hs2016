@@ -1,19 +1,26 @@
 package jrtr;
 
-import java.util.Stack;
+import java.util.List;
+import java.util.LinkedList;
 import javax.vecmath.Matrix4f;
 
 public abstract class Group implements Node {
 	
-	// add, remove child
-	abstract public void addChild(Node n);
-	abstract public void removeChild(Node n);
+	LinkedList<Node> children = new LinkedList<Node>();
 	
-	abstract public void initRenderItr(Stack<RenderItem> renderItems, Matrix4f Tabove, GraphSceneManager sceneManager, boolean culling);
-	abstract public void initLightItr(Stack<Light> lightStack, Matrix4f Tabove);
+	// add child
+	public void addChildren(Node... nodes) {
+		for (Node n: nodes)
+			children.add(n);
+	}
+	
+	// remove child
+	public boolean removeChildren(Node n) {
+		return children.remove(n);
+	}
 	
 	// get child
-	public Shape getShape() {
-		return null;
+	public LinkedList<Node> getChildren() {
+		return children;
 	}
 }

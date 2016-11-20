@@ -13,6 +13,7 @@ public class GraphSceneManager implements SceneManagerInterface {
 	private LinkedList<Light> lights;
 	private Camera camera;
 	private Frustum frustum;
+	private TransformGroup sceneGraph;
 	
 	public GraphSceneManager()
 	{
@@ -20,6 +21,7 @@ public class GraphSceneManager implements SceneManagerInterface {
 		lights = new LinkedList<Light>();
 		camera = new Camera();
 		frustum = new Frustum();
+		sceneGraph = new TransformGroup();
 	}
 	
 	public Camera getCamera()
@@ -40,6 +42,10 @@ public class GraphSceneManager implements SceneManagerInterface {
 	public void addLight(Light light)
 	{
 		lights.add(light);
+	}
+	
+	public TransformGroup getSceneGraph() {
+		return sceneGraph;
 	}
 	
 	public Iterator<Light> lightIterator()
