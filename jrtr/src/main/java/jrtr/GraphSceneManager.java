@@ -49,12 +49,12 @@ public class GraphSceneManager implements SceneManagerInterface {
 	
 	public SceneManagerIterator iterator()
 	{
-		return new SimpleSceneManagerItr(this);
+		return new GraphSceneManagerItr(this);
 	}
 	
-	private class SimpleSceneManagerItr implements SceneManagerIterator {
+	private class GraphSceneManagerItr implements SceneManagerIterator {
 		
-		public SimpleSceneManagerItr(GraphSceneManager sceneManager)
+		public GraphSceneManagerItr(GraphSceneManager sceneManager)
 		{
 			itr = sceneManager.shapes.listIterator(0);
 		}
